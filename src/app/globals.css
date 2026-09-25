@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Self-hosted via @fontsource-variable/fraunces (imported once in
+       layout.tsx) - no runtime font fetch, so this never breaks a build
+       running without internet access, unlike next/font/google. */
+    --font-serif: "Fraunces Variable";
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink-900;
+  }
+  /* Visible focus states everywhere - important for keyboard navigation. */
+  :focus-visible {
+    outline: 2px solid theme("colors.clay.600");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * The one typographic move that does the most work to make this feel
+   * designed rather than generated: headlines use a warm, slightly
+   * idiosyncratic serif (Fraunces) tuned via its variable axes - larger
+   * optical size and a touch of "soft" at display sizes - while body copy
+   * stays a plain, fast system-font stack. Nothing else on the page uses
+   * this typeface, which is what keeps it feeling considered rather than
+   * decorative.
+   */
+  .font-display {
+    font-family: var(--font-serif), Georgia, Cambria, serif;
+    font-variation-settings: "opsz" 32, "SOFT" 18, "WONK" 0;
+    letter-spacing: -0.015em;
+  }
+}
