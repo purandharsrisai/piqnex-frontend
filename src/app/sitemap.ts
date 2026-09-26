@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 // to also fetch active listing ids from Supabase and include /parts/[id].
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const staticRoutes = ["", "/browse", "/need", "/sell", "/how-it-works", "/login", "/signup"];
+  const staticRoutes = ["", "/browse", "/need", "/sell", "/how-it-works", "/about", "/contact", "/terms", "/privacy", "/login", "/signup"];
 
   return staticRoutes.map((route) => ({
     url: `${siteUrl}${route}`,
