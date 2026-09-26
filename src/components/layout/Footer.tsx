@@ -24,7 +24,9 @@ export function Footer() {
           <FooterColumn
             title="Company"
             links={[
+              { href: "/about", label: "About Us" },
               { href: "/how-it-works", label: "How It Works" },
+              { href: "/contact", label: "Contact Us" },
               { href: "/signup", label: "Create Account" },
             ]}
           />
@@ -37,7 +39,15 @@ export function Footer() {
           />
         </div>
         <div className="mt-10 flex flex-col gap-2 border-t border-ink-800 pt-6 text-xs text-ink-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} Piqnex.</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p>&copy; {new Date().getFullYear()} Piqnex.</p>
+            <Link href="/terms" className="hover:text-paper">
+              Terms &amp; Conditions
+            </Link>
+            <Link href="/privacy" className="hover:text-paper">
+              Privacy Policy
+            </Link>
+          </div>
           <p>An early build, made for validation - not a finished product.</p>
         </div>
       </div>

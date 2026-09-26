@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, User, X } from "lucide-react";
 import { Logo } from "./Logo";
 import { LinkButton } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,31 @@ const navLinks = [
   { href: "/how-it-works", label: "How It Works" },
 ];
 
-export function NavbarClient({ isLoggedIn, isAdmin = false }: { isLoggedIn: boolean; isAdmin?: boolean }) {
+/** Round avatar linking to /profile - the user's initial, or a generic icon if they have no name. */
+function ProfileAvatar({ displayName, onClick }: { displayName?: string | null; onClick?: () => void }) {
+  const initial = displayName?.trim().charAt(0).toUpperCase();
+  return (
+    <Link
+      href="/profile"
+      onClick={onClick}
+      aria-label="My profile"
+      title="My profile"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-clay-200 bg-clay-100 text-sm font-semibold text-clay-700 transition-colors hover:border-clay-400 hover:bg-clay-200"
+    >
+      {initial || <User className="h-5 w-5" />}
+    </Link>
+  );
+}
+
+export function NavbarClient({
+  isLoggedIn,
+  isAdmin = false,
+  displayName = null,
+}: {
+  isLoggedIn: boolean;
+  isAdmin?: boolean;
+  displayName?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -24,7 +48,7 @@ export function NavbarClient({ isLoggedIn, isAdmin = false }: { isLoggedIn: bool
       <Logo />
 
       <div className="hidden items-center gap-1 md:flex">
-        {navLinks.map((link) => (
+        {isLoggedIn && navLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -48,9 +72,7 @@ export function NavbarClient({ isLoggedIn, isAdmin = false }: { isLoggedIn: bool
                 Admin
               </LinkButton>
             )}
-            <LinkButton href="/profile" variant="outline" size="sm">
-              Profile
-            </LinkButton>
+            <ProfileAvatar displayName={displayName} />
           </>
         ) : (
           <>
@@ -77,7 +99,7 @@ export function NavbarClient({ isLoggedIn, isAdmin = false }: { isLoggedIn: bool
       {open && (
         <div className="absolute left-0 right-0 top-full border-b border-ink-100 bg-paper px-4 py-3 shadow-card md:hidden">
           <div className="flex flex-col gap-1">
-            {navLinks.map((link) => (
+            {isLoggedIn && navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -87,7 +109,7 @@ export function NavbarClient({ isLoggedIn, isAdmin = false }: { isLoggedIn: bool
                 {link.label}
               </Link>
             ))}
-            <div className="mt-2 flex gap-2 border-t border-ink-100 pt-3">
+            <div className={cn("flex gap-2", isLoggedIn && "mt-2 border-t border-ink-100 pt-3")}>
               {isLoggedIn ? (
                 <>
                   {isAdmin && (
@@ -95,9 +117,7 @@ export function NavbarClient({ isLoggedIn, isAdmin = false }: { isLoggedIn: bool
                       Admin
                     </LinkButton>
                   )}
-                  <LinkButton href="/profile" variant="outline" size="sm" className="flex-1">
-                    Profile
-                  </LinkButton>
+                  <ProfileAvatar displayName={displayName} onClick={() => setOpen(false)} />
                 </>
               ) : (
                 <>
