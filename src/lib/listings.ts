@@ -1,20 +1,27 @@
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { apiFetch } from "@/lib/api-client";
 import { SAMPLE_LISTINGS, type SampleListing } from "@/lib/sample-data";
 import type { ListingCardData } from "@/components/listings/ListingCard";
 import type { ConditionOption, PartSearchQuery } from "@/lib/types";
 import { findExactMatches, type MatchableFields } from "@/lib/matching";
 
 /**
- * Data-access layer for listings. Centralizing the Supabase queries here
- * (instead of calling supabase directly from every page) means:
+ * Data-access layer for listings - now calling piqnex-backend (NestJS +
+ * Prisma) instead of Supabase directly. Centralizing the API calls here
+ * (instead of calling apiFetch from every page) means:
  *  1. Pages stay focused on layout/markup, not query logic.
- *  2. We have one place to fall back to sample data when Supabase isn't
- *     configured yet (e.g. you're exploring this project before creating a
- *     Supabase account) or simply has no real listings yet.
+ *  2. We have one place to fall back to sample data when the backend isn't
+ *     reachable yet, or simply has no real listings - the same "fail soft to
+ *     sample data" UX the old Supabase version had for "not configured yet".
  */
 
-export { isSupabaseConfigured };
+const API_URL = (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+
+/** Builds a displayable URL for an uploaded listing image's storage path. */
+export function publicImageUrl(storagePath: string): string | null {
+  if (!storagePath) return null;
+  if (/^https?:\/\//.test(storagePath)) return storagePath;
+  return `${API_URL}/uploads/${storagePath}`;
+}
 
 function sampleToCardData(listing: SampleListing): ListingCardData {
   return {
@@ -31,29 +38,38 @@ function sampleToCardData(listing: SampleListing): ListingCardData {
   };
 }
 
-interface DbListingRow {
-  id: string;
-  brand_name: string;
-  product_name: string;
-  model_label: string | null;
-  part_name: string;
-  condition: ConditionOption;
-  price: number;
-  location: string | null;
-  listing_images: { storage_path: string; sort_order: number }[];
+interface BackendListingImage {
+  storagePath: string;
+  sortOrder: number;
 }
 
-function dbRowToCardData(row: DbListingRow): ListingCardData {
-  const images = [...(row.listing_images ?? [])].sort(
-    (a, b) => a.sort_order - b.sort_order
-  );
+interface BackendListing {
+  id: string;
+  sellerId: string;
+  brandName: string;
+  productName: string;
+  modelLabel: string | null;
+  partName: string;
+  condition: ConditionOption;
+  price: number | string;
+  currency: string;
+  description: string;
+  location: string | null;
+  status: string;
+  createdAt: string;
+  images: BackendListingImage[];
+  seller?: { id: string; displayName: string; location: string | null } | null;
+}
+
+function backendRowToCardData(row: BackendListing): ListingCardData {
+  const images = [...(row.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
   return {
     id: row.id,
-    imageUrl: images[0] ? publicImageUrl(images[0].storage_path) : null,
-    brand: row.brand_name,
-    product: row.product_name,
-    model: row.model_label,
-    part: row.part_name,
+    imageUrl: images[0] ? publicImageUrl(images[0].storagePath) : null,
+    brand: row.brandName,
+    product: row.productName,
+    model: row.modelLabel,
+    part: row.partName,
     condition: row.condition,
     price: Number(row.price),
     location: row.location,
@@ -61,43 +77,22 @@ function dbRowToCardData(row: DbListingRow): ListingCardData {
   };
 }
 
-/** Builds the public URL for a file stored in the "listing-images" bucket. */
-export function publicImageUrl(storagePath: string) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!base) return null;
-  return `${base}/storage/v1/object/public/listing-images/${storagePath}`;
-}
-
-const LISTING_SELECT = `
-  id, brand_name, product_name, model_label, part_name, condition, price, location,
-  listing_images ( storage_path, sort_order )
-`;
-
 /** Homepage "recently listed" strip. Pads with sample data if real listings are sparse. */
 export async function getHomepageListings(limit: number): Promise<ListingCardData[]> {
-  if (!isSupabaseConfigured()) {
-    return SAMPLE_LISTINGS.slice(0, limit).map(sampleToCardData);
-  }
-
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("listings")
-      .select(LISTING_SELECT)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    const data = await apiFetch<BackendListing[]>("/listings/featured", {
+      authenticated: false,
+      query: { limit },
+    });
 
-    if (error) throw error;
-
-    const real = (data as DbListingRow[] | null)?.map(dbRowToCardData) ?? [];
+    const real = data.map(backendRowToCardData);
     if (real.length >= limit) return real;
 
     const fillerNeeded = limit - real.length;
     return [...real, ...SAMPLE_LISTINGS.slice(0, fillerNeeded).map(sampleToCardData)];
   } catch {
-    // Supabase not reachable / table not migrated yet - fail soft to sample data
-    // rather than showing a broken homepage.
+    // Backend not reachable yet - fail soft to sample data rather than
+    // showing a broken homepage.
     return SAMPLE_LISTINGS.slice(0, limit).map(sampleToCardData);
   }
 }
@@ -110,56 +105,41 @@ export interface ListingSearchResult {
 
 const PAGE_SIZE = 12;
 
-/** Powers /browse: full filterable, paginated search. */
+/**
+ * Powers /browse: full filterable, paginated search.
+ *
+ * NOTE: piqnex-backend's GET /listings only filters `brand` by the
+ * structured catalog's brand SLUG (most listings don't have one yet - see
+ * CreateListingDto) and has no separate product/model/part filters, unlike
+ * the old Supabase version's free-text ilike on each column. We fold the
+ * free-text brand/product/model/part/q inputs from the search form into a
+ * single `q`, which the backend already matches (case-insensitively) across
+ * brandName/productName/modelLabel/partName/description - see
+ * ListingsService.search().
+ */
 export async function searchListings(query: PartSearchQuery): Promise<ListingSearchResult> {
   const page = query.page ?? 1;
 
-  if (!isSupabaseConfigured()) {
-    const filtered = filterSampleListings(query);
-    return {
-      listings: filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(sampleToCardData),
-      total: filtered.length,
-      usingSampleData: true,
-    };
-  }
+  const freeText = [query.brand, query.product, query.model, query.part, query.q]
+    .filter((v): v is string => Boolean(v && v.trim()))
+    .join(" ")
+    .trim();
 
   try {
-    const supabase = await createClient();
-    let db = supabase
-      .from("listings")
-      .select(LISTING_SELECT, { count: "exact" })
-      .eq("status", "active");
+    const result = await apiFetch<{ items: BackendListing[]; total: number }>("/listings", {
+      authenticated: false,
+      query: {
+        category: query.category,
+        condition: query.condition,
+        location: query.location,
+        minPrice: query.minPrice,
+        maxPrice: query.maxPrice,
+        q: freeText || undefined,
+        page,
+      },
+    });
 
-    if (query.brand) db = db.ilike("brand_name", `%${query.brand}%`);
-    if (query.product) db = db.ilike("product_name", `%${query.product}%`);
-    if (query.model) db = db.ilike("model_label", `%${query.model}%`);
-    if (query.part) db = db.ilike("part_name", `%${query.part}%`);
-    if (query.condition) db = db.eq("condition", query.condition);
-    if (query.location) db = db.ilike("location", `%${query.location}%`);
-    if (query.minPrice !== undefined) db = db.gte("price", query.minPrice);
-    if (query.maxPrice !== undefined) db = db.lte("price", query.maxPrice);
-    if (query.q) db = db.textSearch("search_vector", query.q, { type: "websearch" });
-    if (query.category) {
-      const { data: cat } = await supabase
-        .from("categories")
-        .select("id")
-        .eq("slug", query.category)
-        .maybeSingle();
-      if (cat) db = db.eq("category_id", cat.id);
-    }
-
-    const from = (page - 1) * PAGE_SIZE;
-    const { data, count, error } = await db
-      .order("created_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw error;
-
-    const real = (data as DbListingRow[] | null)?.map(dbRowToCardData) ?? [];
-
-    // If there are no real results at all (fresh project), show sample data
-    // filtered the same way, so the browse page still demonstrates the UX.
-    if ((count ?? 0) === 0 && page === 1) {
+    if (result.total === 0 && page === 1) {
       const filtered = filterSampleListings(query);
       return {
         listings: filtered.map(sampleToCardData),
@@ -168,7 +148,11 @@ export async function searchListings(query: PartSearchQuery): Promise<ListingSea
       };
     }
 
-    return { listings: real, total: count ?? real.length, usingSampleData: false };
+    return {
+      listings: result.items.map(backendRowToCardData),
+      total: result.total,
+      usingSampleData: false,
+    };
   } catch {
     const filtered = filterSampleListings(query);
     return {
@@ -205,33 +189,26 @@ export interface NeedMatchResult {
 
 /**
  * Powers the "I NEED A PART" search (/need). Looks for listings whose
- * brand/product/part match exactly (see lib/matching.ts for the rule).
+ * brand/product/part match exactly (see lib/matching.ts for the rule, and
+ * GET /listings/match on the backend for the equivalent server-side query).
  * Sample data is always included as extra (clearly badged) results so the
  * matching flow demonstrates real behavior before you have live listings.
  */
 export async function getNeedMatches(query: MatchableFields): Promise<NeedMatchResult> {
   const sampleMatches = findExactMatches(query, SAMPLE_LISTINGS).map(sampleToCardData);
 
-  if (!isSupabaseConfigured()) {
-    return { matches: sampleMatches, usingSampleData: sampleMatches.length > 0 };
-  }
-
   try {
-    const supabase = await createClient();
-    let db = supabase
-      .from("listings")
-      .select(LISTING_SELECT)
-      .eq("status", "active")
-      .ilike("brand_name", query.brand)
-      .ilike("product_name", query.product)
-      .ilike("part_name", query.part);
+    const data = await apiFetch<BackendListing[]>("/listings/match", {
+      authenticated: false,
+      query: {
+        brandName: query.brand,
+        productName: query.product,
+        modelLabel: query.model ?? undefined,
+        partName: query.part,
+      },
+    });
 
-    if (query.model) db = db.ilike("model_label", query.model);
-
-    const { data, error } = await db.order("created_at", { ascending: false });
-    if (error) throw error;
-
-    const real = (data as DbListingRow[] | null)?.map(dbRowToCardData) ?? [];
+    const real = data.map(backendRowToCardData);
     return { matches: [...real, ...sampleMatches], usingSampleData: sampleMatches.length > 0 };
   } catch {
     return { matches: sampleMatches, usingSampleData: sampleMatches.length > 0 };
@@ -257,68 +234,37 @@ export interface ListingDetail {
   isSample: boolean;
 }
 
-/**
- * Powers /parts/[id]. Checks the real DB first, falls back to sample data by
- * id. Uses two simple queries (listing, then seller profile) rather than a
- * PostgREST embedded-relation alias - a little more explicit, and easier to
- * follow if you're new to Supabase.
- */
+/** Powers /parts/[id]. Checks the real backend first, falls back to sample data by id. */
 export async function getListingDetail(id: string): Promise<ListingDetail | null> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { data: row, error } = await supabase
-        .from("listings")
-        .select(
-          `id, seller_id, brand_name, product_name, model_label, part_name, condition, price,
-           currency, description, location, status, created_at,
-           listing_images ( storage_path, sort_order )`
-        )
-        .eq("id", id)
-        .maybeSingle();
+  try {
+    const row = await apiFetch<BackendListing>(`/listings/${id}`, { authenticated: false });
 
-      if (!error && row) {
-        const typedRow = row as unknown as DbListingRow & {
-          seller_id: string;
-          currency: string;
-          description: string;
-          status: string;
-          created_at: string;
-        };
+    const images = [...(row.images ?? [])]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((img) => publicImageUrl(img.storagePath))
+      .filter((url): url is string => Boolean(url));
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("display_name, location")
-          .eq("id", typedRow.seller_id)
-          .maybeSingle();
-
-        const images = [...(typedRow.listing_images ?? [])]
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map((img) => publicImageUrl(img.storage_path))
-          .filter((url): url is string => Boolean(url));
-
-        return {
-          id: typedRow.id,
-          sellerId: typedRow.seller_id,
-          brand: typedRow.brand_name,
-          product: typedRow.product_name,
-          model: typedRow.model_label,
-          part: typedRow.part_name,
-          condition: typedRow.condition,
-          price: Number(typedRow.price),
-          currency: typedRow.currency,
-          description: typedRow.description,
-          location: typedRow.location,
-          status: typedRow.status,
-          createdAt: typedRow.created_at,
-          images,
-          seller: profile ? { displayName: profile.display_name, location: profile.location } : null,
-          isSample: false,
-        };
-      }
-    } catch {
-      // fall through to sample lookup below
-    }
+    return {
+      id: row.id,
+      sellerId: row.sellerId,
+      brand: row.brandName,
+      product: row.productName,
+      model: row.modelLabel,
+      part: row.partName,
+      condition: row.condition,
+      price: Number(row.price),
+      currency: row.currency,
+      description: row.description,
+      location: row.location,
+      status: row.status,
+      createdAt: row.createdAt,
+      images,
+      seller: row.seller ? { displayName: row.seller.displayName, location: row.seller.location } : null,
+      isSample: false,
+    };
+  } catch {
+    // 404 (or the backend being unreachable) falls through to the sample
+    // lookup below, same fail-soft behavior as the old Supabase version.
   }
 
   const sample = SAMPLE_LISTINGS.find((l) => l.id === id);

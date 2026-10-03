@@ -2,47 +2,28 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
+import { apiFetch, ApiError, getCurrentUser } from "@/lib/api-client";
 import { categorySchema, brandSchema } from "@/lib/validations";
 import { zodFieldErrors, type ActionState } from "./types";
 import type { ListingStatus, NeedRequestStatus } from "@/lib/types";
 
-const NOT_CONFIGURED_MESSAGE =
-  "The admin service role isn't configured yet. Add SUPABASE_SERVICE_ROLE_KEY to .env.local and restart the dev server.";
-
 /**
  * Every admin Server Action calls this first. Server Actions can be invoked
- * directly (not just through the /admin pages), so this re-checks is_admin
- * independently of the /admin layout's page-level gate - the same defense-
- * in-depth reasoning the existing listings actions already use when they
- * re-check `seller_id` even though RLS also enforces it.
+ * directly (not just through the /admin pages), so this re-checks isAdmin
+ * independently of the /admin layout's page-level gate - the backend's
+ * AdminController (JwtAuthGuard + AdminGuard on every route) is still the
+ * real authorization boundary; this is just a friendlier redirect than a
+ * raw 403 would be.
  */
 async function requireAdmin() {
-  if (!isSupabaseConfigured()) redirect("/login");
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login?redirectTo=/admin");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile?.is_admin) redirect("/");
-
+  if (!user.isAdmin) redirect("/");
   return user;
 }
 
-/** True when a Postgres error is a foreign-key violation (code 23503). */
-function isForeignKeyViolation(error: unknown): boolean {
-  return Boolean(error && typeof error === "object" && (error as { code?: string }).code === "23503");
+function isConflict(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 409;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,10 +32,8 @@ function isForeignKeyViolation(error: unknown): boolean {
 
 export async function adminSetListingStatusAction(listingId: string, status: ListingStatus) {
   await requireAdmin();
-  if (!isAdminConfigured()) return;
 
-  const admin = createAdminClient();
-  await admin.from("listings").update({ status }).eq("id", listingId);
+  await apiFetch(`/admin/listings/${listingId}/status`, { method: "PATCH", body: { status } });
 
   revalidatePath("/admin/listings");
   revalidatePath("/browse");
@@ -68,20 +47,16 @@ export async function adminSetListingStatusAction(listingId: string, status: Lis
 
 export async function adminSetNeedRequestStatusAction(id: string, status: NeedRequestStatus) {
   await requireAdmin();
-  if (!isAdminConfigured()) return;
 
-  const admin = createAdminClient();
-  await admin.from("need_requests").update({ status }).eq("id", id);
+  await apiFetch(`/admin/need-requests/${id}/status`, { method: "PATCH", body: { status } });
 
   revalidatePath("/admin/need-requests");
 }
 
 export async function adminDeleteNeedRequestAction(id: string) {
   await requireAdmin();
-  if (!isAdminConfigured()) return;
 
-  const admin = createAdminClient();
-  await admin.from("need_requests").delete().eq("id", id);
+  await apiFetch(`/admin/need-requests/${id}`, { method: "DELETE" });
 
   revalidatePath("/admin/need-requests");
 }
@@ -95,9 +70,6 @@ export async function adminCreateCategoryAction(
   formData: FormData
 ): Promise<ActionState> {
   await requireAdmin();
-  if (!isAdminConfigured()) {
-    return { status: "error", message: NOT_CONFIGURED_MESSAGE };
-  }
 
   const parsed = categorySchema.safeParse({
     slug: formData.get("slug"),
@@ -109,16 +81,18 @@ export async function adminCreateCategoryAction(
     return { status: "error", fieldErrors: zodFieldErrors(parsed.error) };
   }
 
-  const admin = createAdminClient();
-  const { error } = await admin.from("categories").insert({
-    slug: parsed.data.slug,
-    name: parsed.data.name,
-    icon: parsed.data.icon || null,
-    sort_order: parsed.data.sort_order ?? 0,
-  });
-
-  if (error) {
-    const message = error.message.toLowerCase().includes("duplicate")
+  try {
+    await apiFetch("/admin/categories", {
+      method: "POST",
+      body: {
+        slug: parsed.data.slug,
+        name: parsed.data.name,
+        icon: parsed.data.icon || undefined,
+        sortOrder: parsed.data.sort_order ?? 0,
+      },
+    });
+  } catch (error) {
+    const message = isConflict(error)
       ? "That slug is already used by another category."
       : "We couldn't create that category. Please try again.";
     return { status: "error", message };
@@ -130,15 +104,11 @@ export async function adminCreateCategoryAction(
 
 export async function adminDeleteCategoryAction(categoryId: string): Promise<ActionState> {
   await requireAdmin();
-  if (!isAdminConfigured()) {
-    return { status: "error", message: NOT_CONFIGURED_MESSAGE };
-  }
 
-  const admin = createAdminClient();
-  const { error } = await admin.from("categories").delete().eq("id", categoryId);
-
-  if (error) {
-    if (isForeignKeyViolation(error)) {
+  try {
+    await apiFetch(`/admin/categories/${categoryId}`, { method: "DELETE" });
+  } catch (error) {
+    if (isConflict(error)) {
       return {
         status: "error",
         message: "This category is still in use by existing products and can't be deleted.",
@@ -160,9 +130,6 @@ export async function adminCreateBrandAction(
   formData: FormData
 ): Promise<ActionState> {
   await requireAdmin();
-  if (!isAdminConfigured()) {
-    return { status: "error", message: NOT_CONFIGURED_MESSAGE };
-  }
 
   const parsed = brandSchema.safeParse({
     slug: formData.get("slug"),
@@ -173,15 +140,17 @@ export async function adminCreateBrandAction(
     return { status: "error", fieldErrors: zodFieldErrors(parsed.error) };
   }
 
-  const admin = createAdminClient();
-  const { error } = await admin.from("brands").insert({
-    slug: parsed.data.slug,
-    name: parsed.data.name,
-    category_id: parsed.data.category_id,
-  });
-
-  if (error) {
-    const message = error.message.toLowerCase().includes("duplicate")
+  try {
+    await apiFetch("/admin/brands", {
+      method: "POST",
+      body: {
+        slug: parsed.data.slug,
+        name: parsed.data.name,
+        categoryId: parsed.data.category_id,
+      },
+    });
+  } catch (error) {
+    const message = isConflict(error)
       ? "That slug is already used by another brand."
       : "We couldn't create that brand. Please try again.";
     return { status: "error", message };
@@ -193,15 +162,11 @@ export async function adminCreateBrandAction(
 
 export async function adminDeleteBrandAction(brandId: string): Promise<ActionState> {
   await requireAdmin();
-  if (!isAdminConfigured()) {
-    return { status: "error", message: NOT_CONFIGURED_MESSAGE };
-  }
 
-  const admin = createAdminClient();
-  const { error } = await admin.from("brands").delete().eq("id", brandId);
-
-  if (error) {
-    if (isForeignKeyViolation(error)) {
+  try {
+    await apiFetch(`/admin/brands/${brandId}`, { method: "DELETE" });
+  } catch (error) {
+    if (isConflict(error)) {
       return {
         status: "error",
         message: "This brand is still in use by existing products and can't be deleted.",

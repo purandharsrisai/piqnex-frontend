@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    Browser-tab favicon. Same shape as LogoMark in
+    src/components/layout/Logo.tsx (a price tag with a jigsaw-piece hole
+    punched through it) - kept in sync with that file by hand, since this
+    is a static file Next.js serves directly as /icon rather than a
+    rendered component. Fill is hardcoded (no currentColor context here);
+    the two cutouts are real mask holes, so they stay transparent against
+    a light or dark browser tab alike.
+  -->
+  <mask id="m">
+    <rect width="100" height="100" fill="white" />
+    <path
+      d="M22,42 a4,4 0 0 1 4,-4 h5 a6,6 0 0 1 12,0 h5 a4,4 0 0 1 4,4 v5 a6,6 0 0 1 0,12 v5 a4,4 0 0 1 -4,4 h-22 a4,4 0 0 1 -4,-4 z"
+      fill="black"
+    />
+    <circle cx="70" cy="50" r="7" fill="black" />
+  </mask>
+  <path
+    d="M26,14 H58 L90,50 L58,86 H26 A12,12 0 0 1 14,74 V26 A12,12 0 0 1 26,14 Z"
+    fill="#8c4d2d"
+    mask="url(#m)"
+  />
+</svg>

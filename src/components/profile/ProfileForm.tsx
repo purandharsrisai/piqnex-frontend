@@ -19,9 +19,11 @@ function SubmitButton() {
 export function ProfileForm({
   displayName,
   location,
+  phone,
 }: {
   displayName: string;
   location: string | null;
+  phone: string | null;
 }) {
   const [state, formAction] = useFormState(updateProfileAction, IDLE_STATE);
 
@@ -40,6 +42,15 @@ export function ProfileForm({
       </Field>
       <Field label="Location" hint="Shown on your listings">
         <Input name="location" defaultValue={location ?? ""} placeholder="e.g. Bengaluru, KA" />
+      </Field>
+      <Field label="Phone number" hint="Optional - not shown publicly yet" error={state.fieldErrors?.phone}>
+        <Input
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          defaultValue={phone ?? ""}
+          placeholder="e.g. +91 98xxxxxxxx"
+        />
       </Field>
       <div>
         <SubmitButton />

@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { LogoMark } from "./Logo";
+// Shows the current build/version number in the footer - see
+// scripts/bump-version.js, which bumps this automatically on every commit.
+import packageJson from "../../../package.json";
 
 export function Footer() {
   return (
@@ -6,8 +10,11 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <p className="font-display text-lg text-paper">
-              Piq<span className="text-clay-400">nex</span>
+            <p className="flex items-center gap-1.5 font-display text-lg text-paper">
+              <LogoMark className="h-4 w-4 shrink-0 text-clay-400" />
+              <span>
+                Piq<span className="text-clay-400">nex</span>
+              </span>
             </p>
             <p className="mt-3 max-w-[26ch] text-sm text-ink-400">
               Don&rsquo;t replace the whole product. Replace the missing piece.
@@ -48,7 +55,12 @@ export function Footer() {
               Privacy Policy
             </Link>
           </div>
-          <p>An early build, made for validation - not a finished product.</p>
+          <p className="flex items-center gap-2">
+            <span>An early build, made for validation - not a finished product.</span>
+            <span className="rounded-full bg-ink-800 px-2 py-0.5 text-[11px] font-medium text-ink-400">
+              v{packageJson.version}
+            </span>
+          </p>
         </div>
       </div>
     </footer>

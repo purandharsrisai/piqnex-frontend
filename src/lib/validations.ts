@@ -46,9 +46,57 @@ export type ContactRequestInput = z.infer<typeof contactRequestSchema>;
 
 export const authSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 export type AuthInput = z.infer<typeof authSchema>;
+
+export const signupSchema = z
+  .object({
+    displayName: z.string().trim().min(1, "Display name is required").max(80),
+    email: z.string().trim().email("Enter a valid email address"),
+    phone: z
+      .string()
+      .trim()
+      .min(1, "Phone number is required")
+      .max(20)
+      .regex(/^[0-9+()\-\s]{6,20}$/, "Enter a valid phone number"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Re-enter your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+export type SignupInput = z.infer<typeof signupSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address"),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Missing reset token"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

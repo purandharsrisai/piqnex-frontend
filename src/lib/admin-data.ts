@@ -1,16 +1,13 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { apiFetch } from "@/lib/api-client";
 import { publicImageUrl } from "@/lib/listings";
 import type { ConditionOption, ListingStatus, NeedRequestStatus } from "@/lib/types";
 
 /**
- * Data-access layer for the /admin area. Every function here uses the
- * service-role client (bypasses RLS) so admins can see/manage every user's
- * data, not just their own - see lib/supabase/admin.ts and
- * lib/actions/admin.ts (requireAdmin) for the authorization boundary that
- * must be checked BEFORE any of these are called.
+ * Data-access layer for the /admin area - now calling piqnex-backend's
+ * AdminController (every route there requires JwtAuthGuard + AdminGuard,
+ * see src/app/admin/layout.tsx for the frontend-side gate). This replaces
+ * the old service-role Supabase client that bypassed RLS directly.
  */
-
-const PAGE_SIZE = 20;
 
 export interface AdminListingRow {
   id: string;
@@ -32,45 +29,51 @@ export interface AdminListResult<T> {
   total: number;
 }
 
+interface BackendAdminListing {
+  id: string;
+  sellerId: string;
+  brandName: string;
+  productName: string;
+  modelLabel: string | null;
+  partName: string;
+  condition: ConditionOption;
+  price: number | string;
+  status: ListingStatus;
+  createdAt: string;
+  images: { storagePath: string; sortOrder: number }[];
+  seller: { id: string; displayName: string } | null;
+}
+
 /** All listings, any seller, any status - powers /admin/listings. */
 export async function getAllListingsForAdmin(page = 1): Promise<AdminListResult<AdminListingRow>> {
-  const supabase = createAdminClient();
-  const from = (page - 1) * PAGE_SIZE;
-
-  const { data, count, error } = await supabase
-    .from("listings")
-    .select(
-      `id, seller_id, brand_name, product_name, model_label, part_name, condition, price, status, created_at,
-       listing_images ( storage_path, sort_order ),
-       profiles ( display_name )`,
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .range(from, from + PAGE_SIZE - 1);
-
-  if (error || !data) return { rows: [], total: 0 };
-
-  const rows = data.map((row: any): AdminListingRow => {
-    const images = [...(row.listing_images ?? [])].sort(
-      (a: any, b: any) => a.sort_order - b.sort_order
+  try {
+    const { items, total } = await apiFetch<{ items: BackendAdminListing[]; total: number }>(
+      "/admin/listings",
+      { query: { page } },
     );
-    return {
-      id: row.id,
-      sellerId: row.seller_id,
-      sellerName: row.profiles?.display_name ?? "Unknown",
-      brand: row.brand_name,
-      product: row.product_name,
-      model: row.model_label,
-      part: row.part_name,
-      condition: row.condition,
-      price: Number(row.price),
-      status: row.status,
-      imageUrl: images[0] ? publicImageUrl(images[0].storage_path) : null,
-      createdAt: row.created_at,
-    };
-  });
 
-  return { rows, total: count ?? rows.length };
+    const rows = items.map((row): AdminListingRow => {
+      const images = [...(row.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+      return {
+        id: row.id,
+        sellerId: row.sellerId,
+        sellerName: row.seller?.displayName ?? "Unknown",
+        brand: row.brandName,
+        product: row.productName,
+        model: row.modelLabel,
+        part: row.partName,
+        condition: row.condition,
+        price: Number(row.price),
+        status: row.status,
+        imageUrl: images[0] ? publicImageUrl(images[0].storagePath) : null,
+        createdAt: row.createdAt,
+      };
+    });
+
+    return { rows, total };
+  } catch {
+    return { rows: [], total: 0 };
+  }
 }
 
 export interface AdminNeedRequestRow {
@@ -85,38 +88,44 @@ export interface AdminNeedRequestRow {
   createdAt: string;
 }
 
+interface BackendAdminNeedRequest {
+  id: string;
+  requesterId: string;
+  brandName: string;
+  productName: string;
+  modelLabel: string | null;
+  partName: string;
+  status: NeedRequestStatus;
+  createdAt: string;
+  requester: { id: string; displayName: string } | null;
+}
+
 /** All need requests, any requester, any status - powers /admin/need-requests. */
 export async function getAllNeedRequestsForAdmin(
   page = 1
 ): Promise<AdminListResult<AdminNeedRequestRow>> {
-  const supabase = createAdminClient();
-  const from = (page - 1) * PAGE_SIZE;
+  try {
+    const { items, total } = await apiFetch<{ items: BackendAdminNeedRequest[]; total: number }>(
+      "/admin/need-requests",
+      { query: { page } },
+    );
 
-  const { data, count, error } = await supabase
-    .from("need_requests")
-    .select(
-      `id, requester_id, brand_name, product_name, model_label, part_name, status, created_at,
-       profiles ( display_name )`,
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .range(from, from + PAGE_SIZE - 1);
+    const rows = items.map((row): AdminNeedRequestRow => ({
+      id: row.id,
+      requesterId: row.requesterId,
+      requesterName: row.requester?.displayName ?? "Unknown",
+      brand: row.brandName,
+      product: row.productName,
+      model: row.modelLabel,
+      part: row.partName,
+      status: row.status,
+      createdAt: row.createdAt,
+    }));
 
-  if (error || !data) return { rows: [], total: 0 };
-
-  const rows = data.map((row: any): AdminNeedRequestRow => ({
-    id: row.id,
-    requesterId: row.requester_id,
-    requesterName: row.profiles?.display_name ?? "Unknown",
-    brand: row.brand_name,
-    product: row.product_name,
-    model: row.model_label,
-    part: row.part_name,
-    status: row.status,
-    createdAt: row.created_at,
-  }));
-
-  return { rows, total: count ?? rows.length };
+    return { rows, total };
+  } catch {
+    return { rows: [], total: 0 };
+  }
 }
 
 export interface AdminUserRow {
@@ -129,49 +138,17 @@ export interface AdminUserRow {
 }
 
 /**
- * All users - powers /admin/users. Emails live in auth.users, not
- * `profiles`, so they can only be read via the admin API (service role).
+ * All users - powers /admin/users. piqnex-backend's User model already
+ * merges what used to be split across Supabase's auth.users + profiles, so
+ * this is a single call instead of the old profiles + auth.admin.listUsers()
+ * pagination dance.
  */
 export async function getAllUsersForAdmin(): Promise<AdminUserRow[]> {
-  const supabase = createAdminClient();
-
-  const [{ data: profiles, error: profilesError }, authUsers] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, display_name, location, is_admin, created_at")
-      .order("created_at", { ascending: false }),
-    listAllAuthUsers(supabase),
-  ]);
-
-  if (profilesError || !profiles) return [];
-
-  const emailById = new Map(authUsers.map((u) => [u.id, u.email ?? null]));
-
-  return profiles.map((p) => ({
-    id: p.id,
-    displayName: p.display_name,
-    email: emailById.get(p.id) ?? null,
-    location: p.location,
-    isAdmin: p.is_admin,
-    createdAt: p.created_at,
-  }));
-}
-
-/** Pages through supabase.auth.admin.listUsers() - it caps at 1000/page. */
-async function listAllAuthUsers(supabase: ReturnType<typeof createAdminClient>) {
-  const perPage = 1000;
-  let page = 1;
-  const all: { id: string; email?: string | null }[] = [];
-
-  for (;;) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
-    if (error || !data) break;
-    all.push(...data.users.map((u) => ({ id: u.id, email: u.email })));
-    if (data.users.length < perPage) break;
-    page += 1;
+  try {
+    return await apiFetch<AdminUserRow[]>("/admin/users");
+  } catch {
+    return [];
   }
-
-  return all;
 }
 
 export interface AdminCategory {
@@ -182,22 +159,12 @@ export interface AdminCategory {
   sortOrder: number;
 }
 
-/** Categories are already publicly readable, so no service role needed here. */
 export async function getCategoriesForAdmin(): Promise<AdminCategory[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, slug, name, icon, sort_order")
-    .order("sort_order", { ascending: true });
-
-  if (error || !data) return [];
-  return data.map((c) => ({
-    id: c.id,
-    slug: c.slug,
-    name: c.name,
-    icon: c.icon,
-    sortOrder: c.sort_order,
-  }));
+  try {
+    return await apiFetch<AdminCategory[]>("/admin/categories");
+  } catch {
+    return [];
+  }
 }
 
 export interface AdminBrand {
@@ -208,38 +175,55 @@ export interface AdminBrand {
   categoryName: string | null;
 }
 
-export async function getBrandsForAdmin(): Promise<AdminBrand[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("brands")
-    .select("id, slug, name, category_id, categories ( name )")
-    .order("name", { ascending: true });
+interface BackendAdminBrand {
+  id: string;
+  slug: string;
+  name: string;
+  categoryId: string | null;
+}
 
-  if (error || !data) return [];
-  return data.map((b: any) => ({
-    id: b.id,
-    slug: b.slug,
-    name: b.name,
-    categoryId: b.category_id,
-    categoryName: b.categories?.name ?? null,
-  }));
+/**
+ * piqnex-backend's GET /admin/brands doesn't join the category name (see
+ * AdminService.getBrands) - fetch categories alongside and join client-side
+ * to keep this function's return shape the same as the old Supabase version.
+ */
+export async function getBrandsForAdmin(): Promise<AdminBrand[]> {
+  try {
+    const [brands, categories] = await Promise.all([
+      apiFetch<BackendAdminBrand[]>("/admin/brands"),
+      getCategoriesForAdmin(),
+    ]);
+    const categoryNameById = new Map(categories.map((c) => [c.id, c.name]));
+
+    return brands.map((b) => ({
+      id: b.id,
+      slug: b.slug,
+      name: b.name,
+      categoryId: b.categoryId,
+      categoryName: b.categoryId ? categoryNameById.get(b.categoryId) ?? null : null,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 /** Cheap counts for the /admin overview page. */
 export async function getAdminOverviewCounts() {
-  const supabase = createAdminClient();
+  try {
+    const overview = await apiFetch<{
+      totalListings: number;
+      activeListings: number;
+      openNeedRequests: number;
+      users: number;
+    }>("/admin/overview");
 
-  const [listingsTotal, listingsActive, needRequestsOpen, users] = await Promise.all([
-    supabase.from("listings").select("id", { count: "exact", head: true }),
-    supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("need_requests").select("id", { count: "exact", head: true }).eq("status", "open"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
-  ]);
-
-  return {
-    totalListings: listingsTotal.count ?? 0,
-    activeListings: listingsActive.count ?? 0,
-    openNeedRequests: needRequestsOpen.count ?? 0,
-    totalUsers: users.count ?? 0,
-  };
+    return {
+      totalListings: overview.totalListings,
+      activeListings: overview.activeListings,
+      openNeedRequests: overview.openNeedRequests,
+      totalUsers: overview.users,
+    };
+  } catch {
+    return { totalListings: 0, activeListings: 0, openNeedRequests: 0, totalUsers: 0 };
+  }
 }

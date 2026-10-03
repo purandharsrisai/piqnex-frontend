@@ -2,28 +2,20 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { apiFetch, getCurrentUser } from "@/lib/api-client";
 import { needRequestSchema } from "@/lib/validations";
 import { zodFieldErrors, type ActionState } from "./types";
+
+interface Category {
+  id: string;
+  slug: string;
+}
 
 export async function createNeedRequestAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  if (!isSupabaseConfigured()) {
-    return {
-      status: "error",
-      message:
-        "Supabase isn't connected yet, so we can't save need requests. Add your project credentials to .env.local first.",
-    };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?redirectTo=${encodeURIComponent("/need")}`);
   }
@@ -43,24 +35,28 @@ export async function createNeedRequestAction(
     return { status: "error", fieldErrors: zodFieldErrors(parsed.error) };
   }
 
-  const { data: category } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("slug", parsed.data.category)
-    .maybeSingle();
+  let categoryId: string | undefined;
+  try {
+    const categories = await apiFetch<Category[]>("/catalog/categories", { authenticated: false });
+    categoryId = categories.find((c) => c.slug === parsed.data.category)?.id;
+  } catch {
+    categoryId = undefined;
+  }
 
-  const { error } = await supabase.from("need_requests").insert({
-    requester_id: user.id,
-    category_id: category?.id ?? null,
-    brand_name: parsed.data.brand,
-    product_name: parsed.data.product,
-    model_label: parsed.data.model || null,
-    part_name: parsed.data.part,
-    description: parsed.data.description || null,
-    location: parsed.data.location || null,
-  });
-
-  if (error) {
+  try {
+    await apiFetch("/need-requests", {
+      method: "POST",
+      body: {
+        categoryId,
+        brandName: parsed.data.brand,
+        productName: parsed.data.product,
+        modelLabel: parsed.data.model || undefined,
+        partName: parsed.data.part,
+        description: parsed.data.description || undefined,
+        location: parsed.data.location || undefined,
+      },
+    });
+  } catch {
     return {
       status: "error",
       message: "We couldn't save your request just now. Please try again.",
@@ -75,29 +71,28 @@ export async function createNeedRequestAction(
 }
 
 export async function closeNeedRequestAction(requestId: string) {
-  if (!isSupabaseConfigured()) return;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  await supabase
-    .from("need_requests")
-    .update({ status: "closed" })
-    .eq("id", requestId)
-    .eq("requester_id", user.id);
+  try {
+    await apiFetch(`/need-requests/${requestId}/status`, {
+      method: "PATCH",
+      body: { status: "closed" },
+    });
+  } catch {
+    // Fire-and-forget, same as the old Supabase version.
+  }
   revalidatePath("/profile");
 }
 
 export async function deleteNeedRequestAction(requestId: string) {
-  if (!isSupabaseConfigured()) return;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  await supabase.from("need_requests").delete().eq("id", requestId).eq("requester_id", user.id);
+  try {
+    await apiFetch(`/need-requests/${requestId}`, { method: "DELETE" });
+  } catch {
+    // Fire-and-forget, same as the old Supabase version.
+  }
   revalidatePath("/profile");
 }

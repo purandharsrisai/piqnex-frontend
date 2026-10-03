@@ -6,6 +6,7 @@ import { signInAction, signUpAction } from "@/lib/actions/auth";
 import { IDLE_STATE } from "@/lib/actions/types";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 
 function SubmitButton({ label }: { label: string }) {
@@ -31,8 +32,13 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
       </Field>
       <Field label="Password" required error={state.fieldErrors?.password}>
-        <Input name="password" type="password" autoComplete="current-password" />
+        <PasswordInput name="password" autoComplete="current-password" />
       </Field>
+      <p className="-mt-2 text-right text-sm">
+        <Link href="/forgot-password" className="font-medium text-clay-600 hover:underline">
+          Forgot password?
+        </Link>
+      </p>
       <SubmitButton label="Log In" />
       <p className="text-center text-sm text-ink-500">
         New here?{" "}
@@ -59,8 +65,14 @@ export function SignupForm() {
       <Field label="Email" required error={state.fieldErrors?.email}>
         <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
       </Field>
-      <Field label="Password" required hint="At least 6 characters" error={state.fieldErrors?.password}>
-        <Input name="password" type="password" autoComplete="new-password" />
+      <Field label="Phone number" required error={state.fieldErrors?.phone}>
+        <Input name="phone" type="tel" autoComplete="tel" placeholder="e.g. +91 98xxxxxxxx" />
+      </Field>
+      <Field label="Password" required hint="At least 8 characters" error={state.fieldErrors?.password}>
+        <PasswordInput name="password" autoComplete="new-password" />
+      </Field>
+      <Field label="Confirm password" required error={state.fieldErrors?.confirmPassword}>
+        <PasswordInput name="confirmPassword" autoComplete="new-password" />
       </Field>
       <SubmitButton label="Create Account" />
       <p className="text-center text-sm text-ink-500">

@@ -17,6 +17,21 @@ for how to test whether people actually want this.
 - **Database/Auth/Storage:** Supabase (PostgreSQL, Supabase Auth, Supabase Storage)
 - **Hosting:** Vercel
 
+## Versioning & commit messages
+
+Every commit to this repo automatically gets a new version number (see the
+`version` field in `package.json`, and the small "v..." badge in the site's
+footer). This happens on its own via a git hook (`.husky/pre-commit` ->
+`scripts/bump-version.js`) - you don't need to do anything, and you
+shouldn't try to skip it. This means no code is ever committed (or pushed)
+without the version changing.
+
+Commit messages should be written in simple, plain English describing what
+actually changed - no technical jargon - so that anyone, technical or not,
+can read the project's history and understand it. This applies even to
+small changes: instead of "fix bug", write something like "Fixed an issue
+where the login button didn't work on mobile phones."
+
 ## 1. Run it locally (works even without Supabase, using sample data)
 
 ```bash
