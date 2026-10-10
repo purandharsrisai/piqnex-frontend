@@ -9,6 +9,9 @@ import { ReportDialog } from "@/components/messages/ReportDialog";
 import { ContactSellerForm } from "@/components/listings/ContactSellerForm";
 import { ListingImagePlaceholder } from "@/components/listings/ListingImagePlaceholder";
 import { getListingDetail, getSavedIds } from "@/lib/listings";
+import { getReviewEligibility, getSellerRating } from "@/lib/reviews";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { Stars } from "@/components/reviews/Stars";
 import { getCurrentUser } from "@/lib/api-client";
 import { SaveButton } from "@/components/listings/SaveButton";
 import { getOpenNeedRequestMatches } from "@/lib/need-requests";
@@ -36,6 +39,9 @@ export default async function ListingDetailPage({
   const viewer = await getCurrentUser();
   const isOwner = !!viewer && viewer.id === listing.sellerId;
   const isSaved = viewer && !listing.isSample ? (await getSavedIds()).includes(listing.id) : false;
+
+  const sellerRating = listing.isSample ? { average: null, count: 0 } : await getSellerRating(listing.sellerId);
+  const eligibility = viewer && !isOwner && !listing.isSample ? await getReviewEligibility(listing.id) : null;
 
   const justCreated = searchParams.created === "1";
   const needMatches = justCreated
@@ -140,9 +146,18 @@ export default async function ListingDetailPage({
               {(listing.seller?.displayName ?? "S")[0]?.toUpperCase()}
             </span>
             <div>
-              <p className="text-sm font-semibold text-ink-900">
-                {listing.isSample ? "Sample Seller" : listing.seller?.displayName ?? "Marketplace Seller"}
-              </p>
+              {listing.isSample ? (
+                <p className="text-sm font-semibold text-ink-900">Sample Seller</p>
+              ) : (
+                <Link href={`/sellers/${listing.sellerId}`} className="text-sm font-semibold text-ink-900 hover:text-clay-600 hover:underline">
+                  {listing.seller?.displayName ?? "Marketplace Seller"}
+                </Link>
+              )}
+              {sellerRating.count > 0 && sellerRating.average !== null && (
+                <p className="flex items-center gap-1.5 text-xs text-ink-500" data-testid="listing-seller-rating">
+                  <Stars value={sellerRating.average} /> {sellerRating.average} ({sellerRating.count})
+                </p>
+              )}
               <p className="flex items-center gap-1 text-xs text-ink-400">
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 Member of Piqnex
@@ -163,6 +178,15 @@ export default async function ListingDetailPage({
               )}
             </div>
           )}
+
+          {eligibility?.canReview && (
+            <div className="mt-6 rounded-2xl border border-ink-100 bg-ink-50/60 p-4">
+              <h2 className="text-lg font-bold text-ink-900">Rate this seller</h2>
+              <p className="mb-3 text-sm text-ink-500">You messaged them about this part - how did it go?</p>
+              <ReviewForm listingId={listing.id} />
+            </div>
+          )}
+          {eligibility?.hasReviewed && <p className="mt-4 text-sm text-ink-500">You&rsquo;ve reviewed this seller. Thank you!</p>}
 
           <div className="mt-6">
             <h2 className="text-lg font-bold text-ink-900">Contact seller</h2>

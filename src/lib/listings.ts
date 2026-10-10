@@ -1,8 +1,7 @@
 import { apiFetch } from "@/lib/api-client";
-import { SAMPLE_LISTINGS, type SampleListing } from "@/lib/sample-data";
 import type { ListingCardData } from "@/components/listings/ListingCard";
 import type { ConditionOption, PartSearchQuery } from "@/lib/types";
-import { findExactMatches, type MatchableFields } from "@/lib/matching";
+import type { MatchableFields } from "@/lib/matching";
 
 /**
  * Data-access layer for listings - now calling piqnex-backend (NestJS +
@@ -21,21 +20,6 @@ export function publicImageUrl(storagePath: string): string | null {
   if (!storagePath) return null;
   if (/^https?:\/\//.test(storagePath)) return storagePath;
   return `${API_URL}/uploads/${storagePath}`;
-}
-
-function sampleToCardData(listing: SampleListing): ListingCardData {
-  return {
-    id: listing.id,
-    imageUrl: listing.imageUrl,
-    brand: listing.brand,
-    product: listing.product,
-    model: listing.model,
-    part: listing.part,
-    condition: listing.condition,
-    price: listing.price,
-    location: listing.location,
-    isSample: true,
-  };
 }
 
 interface BackendListingImage {
@@ -77,30 +61,22 @@ function backendRowToCardData(row: BackendListing): ListingCardData {
   };
 }
 
-/** Homepage "recently listed" strip. Pads with sample data if real listings are sparse. */
+/** Homepage "recently listed" strip - real listings only (empty until people post). */
 export async function getHomepageListings(limit: number): Promise<ListingCardData[]> {
   try {
     const data = await apiFetch<BackendListing[]>("/listings/featured", {
       authenticated: false,
       query: { limit },
     });
-
-    const real = data.map(backendRowToCardData);
-    if (real.length >= limit) return real;
-
-    const fillerNeeded = limit - real.length;
-    return [...real, ...SAMPLE_LISTINGS.slice(0, fillerNeeded).map(sampleToCardData)];
+    return data.map(backendRowToCardData);
   } catch {
-    // Backend not reachable yet - fail soft to sample data rather than
-    // showing a broken homepage.
-    return SAMPLE_LISTINGS.slice(0, limit).map(sampleToCardData);
+    return [];
   }
 }
 
 export interface ListingSearchResult {
   listings: ListingCardData[];
   total: number;
-  usingSampleData: boolean;
 }
 
 const PAGE_SIZE = 12;
@@ -140,54 +116,17 @@ export async function searchListings(query: PartSearchQuery): Promise<ListingSea
       },
     });
 
-    if (result.total === 0 && page === 1) {
-      const filtered = filterSampleListings(query);
-      return {
-        listings: filtered.map(sampleToCardData),
-        total: filtered.length,
-        usingSampleData: true,
-      };
-    }
-
     return {
       listings: result.items.map(backendRowToCardData),
       total: result.total,
-      usingSampleData: false,
     };
   } catch {
-    const filtered = filterSampleListings(query);
-    return {
-      listings: filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(sampleToCardData),
-      total: filtered.length,
-      usingSampleData: true,
-    };
+    return { listings: [], total: 0 };
   }
-}
-
-function filterSampleListings(query: PartSearchQuery): SampleListing[] {
-  const q = query.q?.toLowerCase().trim();
-  return SAMPLE_LISTINGS.filter((listing) => {
-    if (query.category && listing.category !== query.category) return false;
-    if (query.brand && !listing.brand.toLowerCase().includes(query.brand.toLowerCase())) return false;
-    if (query.product && !listing.product.toLowerCase().includes(query.product.toLowerCase())) return false;
-    if (query.part && !listing.part.toLowerCase().includes(query.part.toLowerCase())) return false;
-    if (query.condition && listing.condition !== query.condition) return false;
-    if (query.location && !listing.location.toLowerCase().includes(query.location.toLowerCase())) return false;
-    if (query.minPrice !== undefined && listing.price < query.minPrice) return false;
-    if (query.maxPrice !== undefined && listing.price > query.maxPrice) return false;
-    if (q) {
-      const haystack = `${listing.brand} ${listing.product} ${listing.model} ${listing.part} ${listing.description}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
-  }).sort((a, b) =>
-    query.sort === "price_asc" ? a.price - b.price : query.sort === "price_desc" ? b.price - a.price : 0
-  );
 }
 
 export interface NeedMatchResult {
   matches: ListingCardData[];
-  usingSampleData: boolean;
 }
 
 /**
@@ -198,8 +137,6 @@ export interface NeedMatchResult {
  * matching flow demonstrates real behavior before you have live listings.
  */
 export async function getNeedMatches(query: MatchableFields): Promise<NeedMatchResult> {
-  const sampleMatches = findExactMatches(query, SAMPLE_LISTINGS).map(sampleToCardData);
-
   try {
     const data = await apiFetch<BackendListing[]>("/listings/match", {
       authenticated: false,
@@ -210,11 +147,9 @@ export async function getNeedMatches(query: MatchableFields): Promise<NeedMatchR
         partName: query.part,
       },
     });
-
-    const real = data.map(backendRowToCardData);
-    return { matches: [...real, ...sampleMatches], usingSampleData: sampleMatches.length > 0 };
+    return { matches: data.map(backendRowToCardData) };
   } catch {
-    return { matches: sampleMatches, usingSampleData: sampleMatches.length > 0 };
+    return { matches: [] };
   }
 }
 
@@ -270,27 +205,7 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
     // lookup below, same fail-soft behavior as the old Supabase version.
   }
 
-  const sample = SAMPLE_LISTINGS.find((l) => l.id === id);
-  if (!sample) return null;
-
-  return {
-    id: sample.id,
-    sellerId: "sample",
-    brand: sample.brand,
-    product: sample.product,
-    model: sample.model,
-    part: sample.part,
-    condition: sample.condition,
-    price: sample.price,
-    currency: "INR",
-    description: sample.description,
-    location: sample.location,
-    status: "active",
-    createdAt: new Date().toISOString(),
-    images: sample.imageUrl ? [sample.imageUrl] : [],
-    seller: null,
-    isSample: true,
-  };
+  return null;
 }
 
 /** Ids of the signed-in user's saved listings (empty when logged out). */
