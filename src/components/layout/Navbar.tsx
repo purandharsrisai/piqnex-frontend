@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/api-client";
+import { getUnreadCount } from "@/lib/messages";
 import { NavbarClient } from "./NavbarClient";
 
 /**
@@ -10,13 +11,15 @@ import { NavbarClient } from "./NavbarClient";
  */
 export async function Navbar() {
   const user = await getCurrentUser();
+  const unread = user ? await getUnreadCount() : 0;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-200/70 bg-paper/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/85 backdrop-blur-xl">
       <NavbarClient
         isLoggedIn={!!user}
         isAdmin={Boolean(user?.isAdmin)}
         displayName={user?.displayName ?? null}
+        unread={unread}
       />
     </header>
   );

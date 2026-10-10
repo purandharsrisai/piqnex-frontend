@@ -135,6 +135,7 @@ export async function searchListings(query: PartSearchQuery): Promise<ListingSea
         minPrice: query.minPrice,
         maxPrice: query.maxPrice,
         q: freeText || undefined,
+        sort: query.sort,
         page,
       },
     });
@@ -179,7 +180,9 @@ function filterSampleListings(query: PartSearchQuery): SampleListing[] {
       if (!haystack.includes(q)) return false;
     }
     return true;
-  });
+  }).sort((a, b) =>
+    query.sort === "price_asc" ? a.price - b.price : query.sort === "price_desc" ? b.price - a.price : 0
+  );
 }
 
 export interface NeedMatchResult {
@@ -288,4 +291,23 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
     seller: null,
     isSample: true,
   };
+}
+
+/** Ids of the signed-in user's saved listings (empty when logged out). */
+export async function getSavedIds(): Promise<string[]> {
+  try {
+    return await apiFetch<string[]>("/saved/ids");
+  } catch {
+    return [];
+  }
+}
+
+/** The signed-in user's saved listings, newest first. */
+export async function getSavedListings(): Promise<ListingCardData[]> {
+  try {
+    const rows = await apiFetch<BackendListing[]>("/saved");
+    return rows.map(backendRowToCardData);
+  } catch {
+    return [];
+  }
 }

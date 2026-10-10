@@ -1,69 +1,65 @@
 import type { Config } from "tailwindcss";
 
-// Design tokens for Piqnex.
+// Design tokens for Piqnex - "bold modern marketplace" template.
 //
-// Deliberately steering away from the generic "AI tool" look: no
-// blue/purple SaaS gradient, no bright all-caps neon accent, no maximally
-// rounded corners on everything. Instead: a warm paper background, a single
-// considered clay/terracotta accent (used sparingly, not painted on every
-// element), a muted moss green for secondary states, and a restrained
-// corner-radius scale that reads more like a well-made print product than
-// a template.
+// White canvas, one confident vivid brand color, deep navy ink, and a fresh
+// teal for "available / success". Rounder corners, heavier sans headlines.
+//
+// NOTE: the token *names* (clay / moss / ink / paper) are kept from the
+// previous template so every existing page re-themes without touching its
+// class names. `clay` is now the brand (vivid orange-red) scale and `moss`
+// is now the teal scale. Rename later if desired.
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        // Primary accent - a muted clay/terracotta, not a bright SaaS orange.
-        // Used for the two core actions (I Need / I Have) and little else.
+        // Brand - vivid tangerine/coral. 600 is the AA-safe button color
+        // with white text; 500 is the bright accent for large elements.
         clay: {
-          50: "#fbf4f0",
-          100: "#f4e2d8",
-          200: "#e7c3ac",
-          300: "#d69f7d",
-          400: "#c17e54",
-          500: "#a8613a",
-          600: "#8c4d2d",
-          700: "#703c24",
-          800: "#57301f",
-          900: "#43261a",
+          50: "#fff4ef",
+          100: "#ffe4d8",
+          200: "#ffc7b0",
+          300: "#ffa183",
+          400: "#ff774f",
+          500: "#f9582a",
+          600: "#da3f14",
+          700: "#b43010",
+          800: "#8f2813",
+          900: "#752414",
         },
-        // Secondary accent - muted moss/olive, used sparingly for
-        // "open"/"available" style states so not everything is clay.
+        // Secondary - fresh teal for available / success states.
         moss: {
-          50: "#f3f5ef",
-          100: "#e3e8d9",
-          200: "#c7d1b3",
-          300: "#a6b489",
-          400: "#849168",
-          500: "#69754f",
-          600: "#535d3e",
-          700: "#414833",
-          800: "#33382a",
-          900: "#292d22",
+          50: "#effcf9",
+          100: "#d5f6ef",
+          200: "#aeeadf",
+          300: "#7cd8ca",
+          400: "#46bfb0",
+          500: "#25a395",
+          600: "#1b8379",
+          700: "#1a6a63",
+          800: "#1a554f",
+          900: "#19463f",
         },
-        // Warm neutral ink - slightly brown-gray rather than blue-gray, so
-        // it sits comfortably next to the clay/moss accents.
+        // Cool navy-slate ink.
         ink: {
-          50: "#f8f6f3",
-          100: "#eee9e2",
-          200: "#dcd3c7",
-          300: "#bbaf9e",
-          400: "#93887a",
-          500: "#6f6559",
-          600: "#544c43",
-          700: "#403a33",
-          800: "#2c2823",
-          900: "#1c1916",
+          50: "#f6f7fb",
+          100: "#eceef5",
+          200: "#dde0ec",
+          300: "#bcc1d6",
+          400: "#8a91ae",
+          500: "#646c8a",
+          600: "#4a5270",
+          700: "#363d58",
+          800: "#1f2540",
+          900: "#0f1228",
         },
-        // The page background - warm off-white "paper" instead of stark
-        // white or a gradient.
-        paper: "#faf7f2",
+        // Page background - clean white.
+        paper: "#ffffff",
       },
       fontFamily: {
-        // Body copy: a dependable system-font stack. No network fetch at
-        // build time, zero layout shift, looks native on every platform.
         sans: [
+          "var(--font-sans)",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
@@ -72,28 +68,29 @@ const config: Config = {
           "Arial",
           "sans-serif",
         ],
-        // Headlines only: a serif with real character (Fraunces), self
-        // hosted via @fontsource so there's no runtime Google Fonts
-        // dependency. This one change does more to make the product feel
-        // designed-by-a-person than any layout tweak.
-        serif: ["var(--font-serif)", "Georgia", "Cambria", "serif"],
+        serif: ["var(--font-sans)", "sans-serif"],
       },
       borderRadius: {
-        // Restrained on purpose - the "everything is a giant rounded
-        // bubble" look is one of the biggest AI-template tells.
-        lg: "0.5rem",
-        xl: "0.625rem",
-        "2xl": "0.875rem",
+        lg: "0.75rem",
+        xl: "1rem",
+        "2xl": "1.5rem",
+        "3xl": "2rem",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(28,25,22,0.05), 0 1px 6px rgba(28,25,22,0.05)",
-        "card-hover": "0 6px 20px rgba(28,25,22,0.10)",
+        card: "0 1px 2px rgba(15,18,40,0.04), 0 2px 8px rgba(15,18,40,0.05)",
+        "card-hover": "0 12px 32px rgba(15,18,40,0.14)",
+        pop: "0 20px 50px -12px rgba(15,18,40,0.25)",
+        brand: "0 10px 24px -6px rgba(218,63,20,0.45)",
       },
-      backgroundImage: {
-        // A barely-there grain texture for large flat backgrounds (the
-        // hero), so it reads as paper rather than a flat digital gradient.
-        grain:
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E\")",
+      keyframes: {
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+      },
+      animation: {
+        float: "float 6.5s ease-in-out infinite",
+        "float-delayed": "float 6.5s ease-in-out -3.2s infinite",
       },
     },
   },

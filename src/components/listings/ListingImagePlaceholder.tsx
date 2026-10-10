@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 // A small, deterministic set of in-palette tints (never a random hue) so a
 // row of placeholders feels like one considered system, not confetti.
 const TINTS = [
-  { bg: "bg-clay-100", text: "text-clay-700" },
-  { bg: "bg-moss-100", text: "text-moss-700" },
-  { bg: "bg-ink-200", text: "text-ink-600" },
+  { bg: "bg-clay-100", text: "text-clay-600", blob: "bg-clay-200" },
+  { bg: "bg-moss-100", text: "text-moss-600", blob: "bg-moss-200" },
+  { bg: "bg-ink-100", text: "text-ink-600", blob: "bg-ink-200" },
 ] as const;
 
 function tintFor(seed: string) {
@@ -23,12 +23,14 @@ function tintFor(seed: string) {
  * image or an empty gray box.
  */
 export function ListingImagePlaceholder({ label, className }: { label: string; className?: string }) {
-  const { bg, text } = tintFor(label);
+  const { bg, text, blob } = tintFor(label);
   const initial = label.trim().charAt(0).toUpperCase() || "?";
 
   return (
-    <div className={cn("flex h-full w-full items-center justify-center", bg, className)}>
-      <span className={cn("font-display text-5xl", text)} aria-hidden="true">
+    <div className={cn("relative flex h-full w-full items-center justify-center overflow-hidden", bg, className)}>
+      <div className={cn("absolute -bottom-10 -right-8 h-36 w-36 rounded-full", blob)} aria-hidden="true" />
+      <div className={cn("absolute -left-6 -top-8 h-24 w-24 rounded-full opacity-60", blob)} aria-hidden="true" />
+      <span className={cn("relative font-display text-7xl", text)} aria-hidden="true">
         {initial}
       </span>
     </div>

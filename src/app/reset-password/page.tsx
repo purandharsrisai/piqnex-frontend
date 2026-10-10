@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card } from "@/components/ui/Card";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
 export const metadata: Metadata = { title: "Reset Password" };
@@ -13,12 +13,7 @@ export default function ResetPasswordPage({
   const token = searchParams.token;
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-16 sm:px-6">
-      <h1 className="text-center font-display text-2xl text-ink-900">Set a new password</h1>
-      <p className="mt-1 text-center text-sm text-ink-500">
-        Choose a new password for your account.
-      </p>
-      <Card className="mt-8 p-6">
+    <AuthShell title="Set a new password" subtitle="Choose a new password for your account.">
         {token ? (
           <ResetPasswordForm token={token} />
         ) : (
@@ -30,7 +25,6 @@ export default function ResetPasswordPage({
             .
           </p>
         )}
-      </Card>
-    </div>
+    </AuthShell>
   );
 }

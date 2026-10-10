@@ -142,5 +142,6 @@ export interface PartSearchQuery {
   maxPrice?: number;
   location?: string;
   q?: string;
+  sort?: "newest" | "price_asc" | "price_desc";
   page?: number;
 }

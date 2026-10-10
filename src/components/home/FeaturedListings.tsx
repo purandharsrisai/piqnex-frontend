@@ -1,28 +1,41 @@
+import { ArrowRight } from "lucide-react";
 import { LinkButton } from "@/components/ui/Button";
 import { ListingGrid } from "@/components/listings/ListingGrid";
+import { Reveal } from "@/components/ui/Reveal";
 import { getHomepageListings } from "@/lib/listings";
 
 export async function FeaturedListings() {
   const listings = await getHomepageListings(8);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2 className="font-display text-2xl text-ink-900">Recently listed</h2>
-          <p className="mt-1 text-ink-500">A few of the pieces people are looking to pass on.</p>
+    <section className="bg-ink-50/70">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+        <Reveal>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wider text-clay-600">Just added</p>
+              <h2 className="mt-2 font-display text-3xl text-ink-900 sm:text-4xl">Fresh listings</h2>
+              <p className="mt-2 text-ink-500">Spare pieces people are looking to pass on.</p>
+            </div>
+            <LinkButton
+              href="/browse"
+              variant="outline"
+              size="md"
+              className="group hidden shrink-0 sm:inline-flex"
+            >
+              View all
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </LinkButton>
+          </div>
+        </Reveal>
+        <Reveal delay={0.08} className="mt-8">
+          <ListingGrid listings={listings} />
+        </Reveal>
+        <div className="mt-8 text-center sm:hidden">
+          <LinkButton href="/browse" variant="outline" size="md">
+            View all listings
+          </LinkButton>
         </div>
-        <LinkButton href="/browse" variant="outline" size="sm" className="hidden sm:inline-flex">
-          View all
-        </LinkButton>
-      </div>
-      <div className="mt-6">
-        <ListingGrid listings={listings} />
-      </div>
-      <div className="mt-6 text-center sm:hidden">
-        <LinkButton href="/browse" variant="outline" size="sm">
-          View all listings
-        </LinkButton>
       </div>
     </section>
   );

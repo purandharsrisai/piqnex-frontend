@@ -2,70 +2,47 @@ import Link from "next/link";
 import { useId } from "react";
 
 /**
- * Split into its own file (rather than living in Navbar.tsx) because
- * NavbarClient.tsx ("use client") needs to render it too - if it lived
- * alongside the server-only Navbar component, importing Logo would drag
- * server-only code (next/headers via the Supabase server client) into the
- * client bundle.
- *
- * Deliberately not the "icon in a rounded colored square next to a bold
- * sans wordmark" pattern - that's the single most recognizable
- * template-generator tell. Instead: a serif wordmark (matching the
- * headline typography elsewhere) with one small inline mark, no
- * container, no drop shadow.
- *
- * The mark (see LogoMark below): a price tag - this is a marketplace,
- * buy and sell - with a single jigsaw-piece-shaped hole punched through
- * it, standing in for "parts" / the "missing piece" from the tagline.
- * Both cutouts are real SVG mask holes rather than shapes painted to
- * match a background color, so the mark looks correct wherever it's
- * used: the translucent paper-colored navbar, the dark ink-900 footer,
- * or a plain browser tab favicon.
+ * Piqnex logo: a rounded app-style tile with a bold white "P" and a small
+ * teal "piece" docking beside it - the "replace the missing piece" idea from
+ * the tagline. Split into its own file so NavbarClient ("use client") can
+ * render it too. The same shape backs src/app/icon.svg and apple-icon.png
+ * (static files, kept in sync by hand).
  */
-export function Logo() {
+export function Logo({ onDark = false }: { onDark?: boolean }) {
   return (
     <Link
       href="/"
-      className="group flex items-center gap-1.5 font-display text-xl text-ink-900"
+      className={`group flex items-center gap-2.5 font-display text-2xl ${onDark ? "text-white" : "text-ink-900"}`}
     >
-      <LogoMark className="h-5 w-5 shrink-0 text-clay-600 transition-transform group-hover:-rotate-6" />
+      <LogoMark className="h-9 w-9 shrink-0 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105" />
       <span>
-        Piq<span className="text-clay-600">nex</span>
+        Piq<span className={onDark ? "text-clay-400" : "text-clay-600"}>nex</span>
       </span>
     </Link>
   );
 }
 
-/**
- * The icon alone, no wordmark - reused in the Footer lockup. The same
- * shape also backs src/app/icon.svg (the browser-tab favicon) and
- * apple-icon.png; those are static files Next.js serves directly, so
- * they're kept in sync with this path data by hand rather than shared
- * code.
- */
+/** The tile alone, no wordmark. Colors are baked in, so it works on any background. */
 export function LogoMark({ className }: { className?: string }) {
-  const maskId = useId();
+  const gradId = useId();
   return (
-    <svg
-      viewBox="0 0 100 100"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className ?? "h-5 w-5"}
-    >
-      <mask id={maskId}>
-        <rect width="100" height="100" fill="white" />
-        {/* The jigsaw-piece "missing piece" cutout */}
-        <path
-          d="M22,42 a4,4 0 0 1 4,-4 h5 a6,6 0 0 1 12,0 h5 a4,4 0 0 1 4,4 v5 a6,6 0 0 1 0,12 v5 a4,4 0 0 1 -4,4 h-22 a4,4 0 0 1 -4,-4 z"
-          fill="black"
-        />
-        {/* The tag's string hole */}
-        <circle cx="70" cy="50" r="7" fill="black" />
-      </mask>
+    <svg viewBox="0 0 64 64" aria-hidden="true" className={className ?? "h-8 w-8"}>
+      <defs>
+        <linearGradient id={gradId} x1="8" y1="4" x2="58" y2="62" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ff7a4d" />
+          <stop offset="1" stopColor="#d23510" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="60" height="60" rx="18" fill={`url(#${gradId})`} />
       <path
-        d="M26,14 H58 L90,50 L58,86 H26 A12,12 0 0 1 14,74 V26 A12,12 0 0 1 26,14 Z"
-        mask={`url(#${maskId})`}
+        d="M21 47V17h10.5a11 11 0 0 1 0 22H21"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="8.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
+      <rect x="40" y="41" width="12" height="12" rx="3.5" fill="#7cd8ca" transform="rotate(12 46 47)" />
     </svg>
   );
 }

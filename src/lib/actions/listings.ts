@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { apiFetch, getCurrentUser } from "@/lib/api-client";
+import { z } from "zod";
+import { CONDITION_OPTIONS } from "@/lib/types";
 import { listingSchema } from "@/lib/validations";
 import { zodFieldErrors, type ActionState } from "./types";
 
@@ -118,6 +120,7 @@ export async function updateListingStatusAction(listingId: string, status: "acti
   revalidatePath("/profile");
   revalidatePath(`/parts/${listingId}`);
   revalidatePath("/browse");
+  revalidatePath("/");
 }
 
 export async function deleteListingAction(listingId: string) {
@@ -132,4 +135,63 @@ export async function deleteListingAction(listingId: string) {
 
   revalidatePath("/profile");
   revalidatePath("/browse");
+  revalidatePath("/");
+}
+
+const editSchema = z.object({
+  brand: z.string().trim().min(1, "Brand is required").max(120),
+  product: z.string().trim().min(1, "Product is required").max(120),
+  model: z.string().trim().max(120).optional().or(z.literal("")),
+  part: z.string().trim().min(1, "Part is required").max(120),
+  condition: z.enum(CONDITION_OPTIONS as unknown as [string, ...string[]], { message: "Choose a condition" }),
+  price: z.coerce.number({ message: "Enter a price" }).min(0, "Price can't be negative"),
+  description: z.string().trim().min(10, "Add a few words describing the part's condition and history").max(2000),
+  location: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
+export async function updateListingAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const id = String(formData.get("listingId") ?? "");
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?redirectTo=${encodeURIComponent(`/parts/${id}/edit`)}`);
+
+  const parsed = editSchema.safeParse({
+    brand: formData.get("brand"),
+    product: formData.get("product"),
+    model: formData.get("model") ?? "",
+    part: formData.get("part"),
+    condition: formData.get("condition"),
+    price: formData.get("price"),
+    description: formData.get("description"),
+    location: formData.get("location") ?? "",
+  });
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: zodFieldErrors(parsed.error) };
+  }
+
+  try {
+    await apiFetch(`/listings/${id}`, {
+      method: "PATCH",
+      body: {
+        brandName: parsed.data.brand,
+        productName: parsed.data.product,
+        modelLabel: parsed.data.model || "",
+        partName: parsed.data.part,
+        condition: parsed.data.condition,
+        price: parsed.data.price,
+        description: parsed.data.description,
+        location: parsed.data.location || "",
+      },
+    });
+  } catch {
+    return { status: "error", message: "We couldn't save your changes. Please try again." };
+  }
+
+  revalidatePath(`/parts/${id}`);
+  revalidatePath("/browse");
+  revalidatePath("/profile");
+  revalidatePath("/");
+  redirect(`/parts/${id}?updated=1`);
 }

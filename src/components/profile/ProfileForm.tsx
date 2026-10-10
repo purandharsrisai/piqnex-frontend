@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} size="sm">
+    <Button type="submit" disabled={pending} size="md" className="w-full">
       {pending ? "Saving..." : "Save Changes"}
     </Button>
   );

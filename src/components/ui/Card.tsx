@@ -12,7 +12,7 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-2xl border border-ink-100 bg-white shadow-card",
+        "rounded-2xl border border-ink-100 bg-white shadow-card transition-shadow duration-200",
         className
       )}
     >

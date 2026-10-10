@@ -24,7 +24,7 @@ function ProfileAvatar({ displayName, onClick }: { displayName?: string | null; 
       onClick={onClick}
       aria-label="My profile"
       title="My profile"
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-clay-200 bg-clay-100 text-sm font-semibold text-clay-700 transition-colors hover:border-clay-400 hover:bg-clay-200"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-600 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-brand"
     >
       {initial || <User className="h-5 w-5" />}
     </Link>
@@ -35,31 +35,36 @@ export function NavbarClient({
   isLoggedIn,
   isAdmin = false,
   displayName = null,
+  unread = 0,
 }: {
   isLoggedIn: boolean;
   isAdmin?: boolean;
   displayName?: string | null;
+  unread?: number;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const links = [...navLinks, { href: "/saved", label: "Saved" }, { href: "/messages", label: "Messages" }];
+  const badge = (href: string) =>
+    href === "/messages" && unread > 0 ? (
+      <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-clay-600 px-1 text-[11px] font-bold text-white">{unread}</span>
+    ) : null;
 
   return (
-    <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+    <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
       <Logo />
 
       <div className="hidden items-center gap-1 md:flex">
-        {isLoggedIn && navLinks.map((link) => (
+        {isLoggedIn && links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
             className={cn(
-              "border-b-2 border-transparent px-3 py-2 text-sm font-medium text-ink-600 transition-colors hover:text-ink-900",
-              pathname === link.href
-                ? "border-clay-600 text-ink-900"
-                : "hover:border-ink-200"
+              "rounded-full px-4 py-2 text-sm font-semibold text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900",
+              pathname === link.href && "bg-ink-100 text-ink-900"
             )}
           >
-            {link.label}
+            {link.label}{badge(link.href)}
           </Link>
         ))}
       </div>
@@ -88,7 +93,7 @@ export function NavbarClient({
 
       <button
         type="button"
-        className="rounded-lg p-2 text-ink-700 hover:bg-ink-50 md:hidden"
+        className="rounded-full p-2 text-ink-800 hover:bg-ink-100 md:hidden"
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen((v) => !v)}
@@ -97,16 +102,16 @@ export function NavbarClient({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full border-b border-ink-100 bg-paper px-4 py-3 shadow-card md:hidden">
+        <div className="absolute left-0 right-0 top-full border-b border-ink-100 bg-white px-4 py-3 shadow-pop md:hidden">
           <div className="flex flex-col gap-1">
-            {isLoggedIn && navLinks.map((link) => (
+            {isLoggedIn && links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-sm font-medium text-ink-700 hover:bg-ink-50"
+                className="rounded-xl px-3 py-3 text-base font-semibold text-ink-800 hover:bg-ink-50"
               >
-                {link.label}
+                {link.label}{badge(link.href)}
               </Link>
             ))}
             <div className={cn("flex gap-2", isLoggedIn && "mt-2 border-t border-ink-100 pt-3")}>

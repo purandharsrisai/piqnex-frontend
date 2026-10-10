@@ -16,7 +16,7 @@ import { AUTH_COOKIE_NAME, decodeJwtPayload, isTokenValid } from "@/lib/auth-coo
  */
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const protectedPaths = ["/sell", "/profile", "/admin"];
+  const protectedPaths = ["/sell", "/profile", "/admin", "/messages", "/saved"];
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
   if (!isProtected) {

@@ -6,7 +6,7 @@ type Tone = "clay" | "moss" | "neutral" | "warning" | "sample";
 // letter-spaced text - reads more like a price tag or a printed label than
 // a generic status pill.
 const toneClasses: Record<Tone, string> = {
-  clay: "bg-clay-100 text-clay-800",
+  clay: "bg-clay-100 text-clay-700",
   moss: "bg-moss-100 text-moss-800",
   neutral: "bg-ink-100 text-ink-700",
   warning: "bg-amber-100 text-amber-900",
@@ -25,7 +25,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide",
         toneClasses[tone],
         className
       )}

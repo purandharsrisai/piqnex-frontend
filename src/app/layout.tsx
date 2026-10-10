@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 // Self-hosted variable font (all axes: weight, optical size, soft, wonk).
 // Imported once here so every page gets it with no runtime network request.
-import "@fontsource-variable/fraunces/full.css";
+import "@fontsource-variable/plus-jakarta-sans/index.css";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";

@@ -3,6 +3,7 @@ import { NeedSearchForm } from "@/components/need/NeedSearchForm";
 import { CreateNeedRequestForm } from "@/components/need/CreateNeedRequestForm";
 import { ListingGrid } from "@/components/listings/ListingGrid";
 import { NoMatchState } from "@/components/ui/States";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { getNeedMatches } from "@/lib/listings";
@@ -34,16 +35,14 @@ export default async function NeedPage({
   const results = hasSearched ? await getNeedMatches({ brand, product, model, part }) : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <div className="text-center">
-        <h1 className="font-display text-3xl text-ink-900">I Need a Part</h1>
-        <p className="mt-2 text-ink-500">
-          Tell us exactly what you have and what&rsquo;s missing. We&rsquo;ll look for a seller
-          with the same brand, product, model, and part.
-        </p>
-      </div>
-
-      <Card className="mt-8 p-5 sm:p-7">
+    <div>
+      <PageHeader
+        eyebrow="I need a part"
+        title="Tell us what's missing"
+        subtitle="Tell us exactly what you have and what's missing. We'll look for a seller with the same brand, product, model, and part."
+      />
+      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <Card className="rounded-3xl p-5 shadow-pop sm:p-8">
         <NeedSearchForm defaults={{ category, brand, product, model, part, description, location }} />
       </Card>
 
@@ -80,6 +79,7 @@ export default async function NeedPage({
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

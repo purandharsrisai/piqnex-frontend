@@ -59,21 +59,26 @@ export function SignupForm() {
           {state.message}
         </p>
       )}
-      <Field label="Display name" required error={state.fieldErrors?.displayName}>
-        <Input name="displayName" placeholder="e.g. Priya S." autoComplete="name" />
-      </Field>
-      <Field label="Email" required error={state.fieldErrors?.email}>
-        <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
-      </Field>
-      <Field label="Phone number" required error={state.fieldErrors?.phone}>
-        <Input name="phone" type="tel" autoComplete="tel" placeholder="e.g. +91 98xxxxxxxx" />
-      </Field>
-      <Field label="Password" required hint="At least 8 characters" error={state.fieldErrors?.password}>
-        <PasswordInput name="password" autoComplete="new-password" />
-      </Field>
-      <Field label="Confirm password" required error={state.fieldErrors?.confirmPassword}>
-        <PasswordInput name="confirmPassword" autoComplete="new-password" />
-      </Field>
+      {/* Two columns from the sm breakpoint up; single column on phones. */}
+      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+        <Field label="Display name" required error={state.fieldErrors?.displayName}>
+          <Input name="displayName" placeholder="e.g. Priya S." autoComplete="name" />
+        </Field>
+        <Field label="Phone number" required error={state.fieldErrors?.phone}>
+          <Input name="phone" type="tel" autoComplete="tel" placeholder="e.g. +91 98xxxxxxxx" />
+        </Field>
+        <div className="sm:col-span-2">
+          <Field label="Email" required error={state.fieldErrors?.email}>
+            <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
+          </Field>
+        </div>
+        <Field label="Password" required hint="At least 8 characters" error={state.fieldErrors?.password}>
+          <PasswordInput name="password" autoComplete="new-password" />
+        </Field>
+        <Field label="Confirm password" required error={state.fieldErrors?.confirmPassword}>
+          <PasswordInput name="confirmPassword" autoComplete="new-password" />
+        </Field>
+      </div>
       <SubmitButton label="Create Account" />
       <p className="text-center text-sm text-ink-500">
         Already have an account?{" "}

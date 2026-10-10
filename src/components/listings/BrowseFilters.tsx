@@ -16,6 +16,7 @@ export interface BrowseFiltersDefaults {
   minPrice?: string;
   maxPrice?: string;
   location?: string;
+  sort?: string;
 }
 
 /**
@@ -27,7 +28,7 @@ export interface BrowseFiltersDefaults {
 export function BrowseFilters({ defaults }: { defaults?: BrowseFiltersDefaults }) {
   return (
     <form action="/browse" method="GET" className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-clay-400">
+      <div className="flex items-center gap-2 rounded-full border border-ink-200 bg-white px-5 py-3 shadow-card focus-within:border-clay-500 focus-within:ring-4 focus-within:ring-clay-100">
         <Search className="h-5 w-5 shrink-0 text-ink-400" aria-hidden="true" />
         <label htmlFor="browse-q" className="sr-only">
           Search parts
@@ -45,7 +46,7 @@ export function BrowseFilters({ defaults }: { defaults?: BrowseFiltersDefaults }
         </Button>
       </div>
 
-      <details className="rounded-xl border border-ink-100 bg-ink-50/40 open:pb-4" open>
+      <details className="rounded-2xl border border-ink-100 bg-ink-50/60 open:pb-4" open>
         <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-ink-700">
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
           Filters
@@ -74,6 +75,17 @@ export function BrowseFilters({ defaults }: { defaults?: BrowseFiltersDefaults }
           </Field>
           <Field label="Max Price (INR)">
             <Input name="maxPrice" type="number" min={0} defaultValue={defaults?.maxPrice} />
+          </Field>
+          <Field label="Sort by">
+            <select
+              name="sort"
+              defaultValue={defaults?.sort ?? "newest"}
+              className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-[15px] text-ink-900 focus:border-clay-400 focus:outline-none focus:ring-2 focus:ring-clay-400"
+            >
+              <option value="newest">Newest first</option>
+              <option value="price_asc">Price: low to high</option>
+              <option value="price_desc">Price: high to low</option>
+            </select>
           </Field>
           <Field label="Location">
             <Input name="location" defaultValue={defaults?.location} placeholder="e.g. Pune" />

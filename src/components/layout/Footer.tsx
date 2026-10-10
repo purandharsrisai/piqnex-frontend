@@ -6,12 +6,12 @@ import packageJson from "../../../package.json";
 
 export function Footer() {
   return (
-    <footer className="mt-20 bg-ink-900 text-ink-300">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <footer className="mt-10 bg-ink-900 text-ink-300">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <p className="flex items-center gap-1.5 font-display text-lg text-paper">
-              <LogoMark className="h-4 w-4 shrink-0 text-clay-400" />
+            <p className="flex items-center gap-2.5 font-display text-2xl text-white">
+              <LogoMark className="h-9 w-9 shrink-0" />
               <span>
                 Piq<span className="text-clay-400">nex</span>
               </span>
@@ -33,6 +33,8 @@ export function Footer() {
             links={[
               { href: "/about", label: "About Us" },
               { href: "/how-it-works", label: "How It Works" },
+              { href: "/faq", label: "FAQ" },
+              { href: "/safety", label: "Safety Tips" },
               { href: "/contact", label: "Contact Us" },
               { href: "/signup", label: "Create Account" },
             ]}
@@ -48,16 +50,16 @@ export function Footer() {
         <div className="mt-10 flex flex-col gap-2 border-t border-ink-800 pt-6 text-xs text-ink-500 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <p>&copy; {new Date().getFullYear()} Piqnex.</p>
-            <Link href="/terms" className="hover:text-paper">
+            <Link href="/terms" className="hover:text-white">
               Terms &amp; Conditions
             </Link>
-            <Link href="/privacy" className="hover:text-paper">
+            <Link href="/privacy" className="hover:text-white">
               Privacy Policy
             </Link>
           </div>
           <p className="flex items-center gap-2">
             <span>An early build, made for validation - not a finished product.</span>
-            <span className="rounded-full bg-ink-800 px-2 py-0.5 text-[11px] font-medium text-ink-400">
+            <span className="rounded-full bg-ink-800 px-2.5 py-1 text-[11px] font-semibold text-ink-300">
               v{packageJson.version}
             </span>
           </p>
@@ -76,13 +78,13 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{title}</p>
+      <p className="text-sm font-bold text-white">{title}</p>
       <ul className="mt-3 space-y-2">
         {links.map((link) => (
           <li key={link.href}>
             <Link
               href={link.href}
-              className="text-sm text-ink-300 hover:text-paper"
+              className="text-sm text-ink-300 hover:text-white"
             >
               {link.label}
             </Link>

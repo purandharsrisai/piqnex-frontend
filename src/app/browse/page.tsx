@@ -4,8 +4,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BrowseFilters } from "@/components/listings/BrowseFilters";
 import { ListingGrid } from "@/components/listings/ListingGrid";
 import { EmptyState } from "@/components/ui/States";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
-import { searchListings } from "@/lib/listings";
+import { getSavedIds, searchListings } from "@/lib/listings";
+import { getCurrentUser } from "@/lib/api-client";
 import type { ConditionOption } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -35,6 +37,8 @@ export default async function BrowsePage({
   const location = param(searchParams, "location");
   const minPriceRaw = param(searchParams, "minPrice");
   const maxPriceRaw = param(searchParams, "maxPrice");
+  const sortRaw = param(searchParams, "sort");
+  const sort = (["price_asc", "price_desc"].includes(sortRaw) ? sortRaw : "newest") as "newest" | "price_asc" | "price_desc";
   const page = Math.max(1, Number(param(searchParams, "page")) || 1);
 
   const result = await searchListings({
@@ -48,13 +52,15 @@ export default async function BrowsePage({
     location: location || undefined,
     minPrice: minPriceRaw ? Number(minPriceRaw) : undefined,
     maxPrice: maxPriceRaw ? Number(maxPriceRaw) : undefined,
+    sort,
     page,
   });
+  const savedIds = (await getCurrentUser()) ? await getSavedIds() : undefined;
 
   const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
   const query = new URLSearchParams(
     Object.fromEntries(
-      Object.entries({ q, category, brand, product, model, part, condition, location, minPriceRaw, maxPriceRaw })
+      Object.entries({ q, category, brand, product, model, part, condition, location, minPriceRaw, maxPriceRaw, sort: sort === "newest" ? "" : sort })
         .filter(([, v]) => v)
     )
   );
@@ -66,12 +72,13 @@ export default async function BrowsePage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-6">
-        <h1 className="font-display text-3xl text-ink-900">Browse Parts</h1>
-        <p className="mt-1 text-ink-500">Find the exact component you need.</p>
-      </div>
-
+    <div>
+      <PageHeader
+        eyebrow="Marketplace"
+        title="Browse parts"
+        subtitle="Find the exact component you need."
+      />
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <BrowseFilters
         defaults={{
           q,
@@ -84,6 +91,7 @@ export default async function BrowsePage({
           minPrice: minPriceRaw,
           maxPrice: maxPriceRaw,
           location,
+          sort,
         }}
       />
 
@@ -96,7 +104,7 @@ export default async function BrowsePage({
         </div>
 
         {result.listings.length > 0 ? (
-          <ListingGrid listings={result.listings} />
+          <ListingGrid listings={result.listings} savedIds={savedIds} />
         ) : (
           <EmptyState
             title="No listings match your filters"
@@ -114,7 +122,7 @@ export default async function BrowsePage({
             <Link
               href={pageHref(Math.max(1, page - 1))}
               aria-disabled={page === 1}
-              className={`flex items-center gap-1 rounded-lg border border-ink-200 px-3 py-2 text-sm ${
+              className={`flex items-center gap-1 rounded-full border-2 border-ink-200 px-4 py-2 text-sm font-semibold ${
                 page === 1 ? "pointer-events-none opacity-40" : "hover:bg-ink-50"
               }`}
             >
@@ -127,7 +135,7 @@ export default async function BrowsePage({
             <Link
               href={pageHref(Math.min(totalPages, page + 1))}
               aria-disabled={page === totalPages}
-              className={`flex items-center gap-1 rounded-lg border border-ink-200 px-3 py-2 text-sm ${
+              className={`flex items-center gap-1 rounded-full border-2 border-ink-200 px-4 py-2 text-sm font-semibold ${
                 page === totalPages ? "pointer-events-none opacity-40" : "hover:bg-ink-50"
               }`}
             >
@@ -136,6 +144,7 @@ export default async function BrowsePage({
             </Link>
           </nav>
         )}
+      </div>
       </div>
     </div>
   );

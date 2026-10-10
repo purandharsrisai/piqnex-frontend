@@ -17,7 +17,7 @@ export default function ContactPage() {
       title="Contact Us"
       intro={<>Questions, feedback, or something not working? We&rsquo;d love to hear from you.</>}
     >
-      <Card className="flex flex-col items-center gap-4 p-8 text-center">
+      <Card className="flex flex-col items-center gap-4 rounded-3xl bg-clay-50 p-10 text-center shadow-pop">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-clay-100 text-clay-700">
           <Mail className="h-6 w-6" />
         </div>
