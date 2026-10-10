@@ -5,7 +5,6 @@ import { BrowseFilters } from "@/components/listings/BrowseFilters";
 import { ListingGrid } from "@/components/listings/ListingGrid";
 import { EmptyState } from "@/components/ui/States";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Badge } from "@/components/ui/Badge";
 import { getSavedIds, searchListings } from "@/lib/listings";
 import { getCurrentUser } from "@/lib/api-client";
 import type { ConditionOption } from "@/lib/types";
@@ -100,7 +99,6 @@ export default async function BrowsePage({
           <p className="text-sm text-ink-500">
             {result.total} {result.total === 1 ? "listing" : "listings"} found
           </p>
-          {result.usingSampleData && <Badge tone="sample">Showing sample listings</Badge>}
         </div>
 
         {result.listings.length > 0 ? (

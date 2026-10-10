@@ -29,7 +29,15 @@ export async function FeaturedListings() {
           </div>
         </Reveal>
         <Reveal delay={0.08} className="mt-8">
-          <ListingGrid listings={listings} />
+          {listings.length > 0 ? (
+            <ListingGrid listings={listings} />
+          ) : (
+            <div className="rounded-3xl border border-dashed border-ink-200 bg-white p-10 text-center">
+              <p className="font-display text-xl text-ink-900">No parts listed yet</p>
+              <p className="mt-1 text-sm text-ink-500">Be the first - got a spare piece someone might need?</p>
+              <LinkButton href="/sell" className="mt-4">List a part</LinkButton>
+            </div>
+          )}
         </Reveal>
         <div className="mt-8 text-center sm:hidden">
           <LinkButton href="/browse" variant="outline" size="md">

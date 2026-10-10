@@ -5,7 +5,6 @@ import { ListingGrid } from "@/components/listings/ListingGrid";
 import { NoMatchState } from "@/components/ui/States";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { getNeedMatches } from "@/lib/listings";
 
 export const metadata: Metadata = {
@@ -54,7 +53,6 @@ export default async function NeedPage({
                 <h2 className="font-display text-xl text-ink-900">
                   {results.matches.length} matching {results.matches.length === 1 ? "part" : "parts"} found
                 </h2>
-                {results.usingSampleData && <Badge tone="sample">Includes sample listings</Badge>}
               </div>
               <ListingGrid listings={results.matches} />
             </>
@@ -62,7 +60,7 @@ export default async function NeedPage({
             <>
               <NoMatchState
                 title="No exact match found yet"
-                description="Nobody has listed this exact part right now. Save a need request and we'll effectively keep watch - sellers who list a matching part in the future will see there's demand."
+                description="Nobody has listed this exact part right now. Save a need request and we'll email you as soon as someone lists a matching part."
               />
               <div className="mt-6 flex justify-center">
                 <CreateNeedRequestForm
