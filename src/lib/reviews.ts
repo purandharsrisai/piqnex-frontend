@@ -47,7 +47,6 @@ export async function getSellerProfile(id: string): Promise<SellerProfileData | 
         condition: l.condition,
         price: Number(l.price),
         location: l.location,
-        isSample: false,
       })),
     };
   } catch {

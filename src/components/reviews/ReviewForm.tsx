@@ -1,5 +1,6 @@
 "use client";
 
+import { Toast } from "@/components/ui/Toast";
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Star } from "lucide-react";
@@ -19,7 +20,12 @@ export function ReviewForm({ listingId }: { listingId: string }) {
   const [rating, setRating] = useState(0);
 
   if (state.status === "success") {
-    return <p className="rounded-xl bg-moss-50 px-4 py-3 text-sm font-medium text-moss-900">{state.message}</p>;
+    return (
+      <>
+        <Toast message="Review posted." trigger={state} />
+        <p className="rounded-xl bg-moss-50 px-4 py-3 text-sm font-medium text-moss-900">{state.message}</p>
+      </>
+    );
   }
 
   return (

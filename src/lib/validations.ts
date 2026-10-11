@@ -54,12 +54,12 @@ export const signupSchema = z
   .object({
     displayName: z.string().trim().min(1, "Display name is required").max(80),
     email: z.string().trim().email("Enter a valid email address"),
+    // 10 digits, no country code - the form only lets digits through.
     phone: z
       .string()
       .trim()
       .min(1, "Phone number is required")
-      .max(20)
-      .regex(/^[0-9+()\-\s]{6,20}$/, "Enter a valid phone number"),
+      .regex(/^[0-9]{10}$/, "Enter a 10-digit phone number"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Re-enter your password"),
   })
@@ -97,32 +97,3 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
-
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-export const categorySchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, "Slug is required")
-    .max(80)
-    .regex(slugPattern, "Use lowercase letters, numbers, and hyphens only"),
-  name: z.string().trim().min(1, "Name is required").max(120),
-  icon: z.string().trim().max(80).optional().or(z.literal("")),
-  sort_order: z.coerce.number().int().min(0).max(1000).optional(),
-});
-export type CategoryInput = z.infer<typeof categorySchema>;
-
-export const brandSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, "Slug is required")
-    .max(80)
-    .regex(slugPattern, "Use lowercase letters, numbers, and hyphens only"),
-  name: z.string().trim().min(1, "Name is required").max(120),
-  category_id: z.string().uuid("Choose a category"),
-});
-export type BrandInput = z.infer<typeof brandSchema>;

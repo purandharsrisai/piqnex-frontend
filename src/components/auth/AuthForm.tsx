@@ -21,28 +21,42 @@ function SubmitButton({ label }: { label: string }) {
 export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const [state, formAction] = useFormState(signInAction, IDLE_STATE);
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name="redirectTo" value={redirectTo ?? "/profile"} />
+    <form action={formAction} className="flex flex-col gap-4 lg:gap-3">
+      <input type="hidden" name="redirectTo" value={redirectTo ?? "/"} />
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
           {state.message}
         </p>
       )}
       <Field label="Email" required error={state.fieldErrors?.email}>
-        <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
+        <Input
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+        />
       </Field>
       <Field label="Password" required error={state.fieldErrors?.password}>
         <PasswordInput name="password" autoComplete="current-password" />
       </Field>
       <p className="-mt-2 text-right text-sm">
-        <Link href="/forgot-password" className="font-medium text-clay-600 hover:underline">
+        <Link
+          href="/forgot-password"
+          className="font-medium text-clay-600 hover:underline"
+        >
           Forgot password?
         </Link>
       </p>
       <SubmitButton label="Log In" />
       <p className="text-center text-sm text-ink-500">
         New here?{" "}
-        <Link href="/signup" className="font-medium text-clay-600 hover:underline">
+        <Link
+          href="/signup"
+          className="font-medium text-clay-600 hover:underline"
+        >
           Create an account
         </Link>
       </p>
@@ -53,36 +67,76 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 export function SignupForm() {
   const [state, formAction] = useFormState(signUpAction, IDLE_STATE);
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4 lg:gap-3">
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
           {state.message}
         </p>
       )}
       {/* Two columns from the sm breakpoint up; single column on phones. */}
-      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-        <Field label="Display name" required error={state.fieldErrors?.displayName}>
-          <Input name="displayName" placeholder="e.g. Priya S." autoComplete="name" />
+      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:gap-y-3">
+        <Field
+          label="Display name"
+          required
+          error={state.fieldErrors?.displayName}
+        >
+          <Input
+            name="displayName"
+            placeholder="e.g. Priya S."
+            autoComplete="name"
+          />
         </Field>
         <Field label="Phone number" required error={state.fieldErrors?.phone}>
-          <Input name="phone" type="tel" autoComplete="tel" placeholder="e.g. +91 98xxxxxxxx" />
+          <Input
+            name="phone"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            placeholder="10-digit mobile number"
+            maxLength={10}
+            pattern="[0-9]{10}"
+            title="Enter a 10-digit phone number (no country code)"
+            onInput={(e) => {
+              e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 10);
+            }}
+          />
         </Field>
         <div className="sm:col-span-2">
           <Field label="Email" required error={state.fieldErrors?.email}>
-            <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
+            <Input
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
           </Field>
         </div>
-        <Field label="Password" required hint="At least 8 characters" error={state.fieldErrors?.password}>
+        <Field
+          label="Password"
+          required
+          hint="At least 8 characters"
+          error={state.fieldErrors?.password}
+        >
           <PasswordInput name="password" autoComplete="new-password" />
         </Field>
-        <Field label="Confirm password" required error={state.fieldErrors?.confirmPassword}>
+        <Field
+          label="Confirm password"
+          required
+          error={state.fieldErrors?.confirmPassword}
+        >
           <PasswordInput name="confirmPassword" autoComplete="new-password" />
         </Field>
       </div>
       <SubmitButton label="Create Account" />
       <p className="text-center text-sm text-ink-500">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-clay-600 hover:underline">
+        <Link
+          href="/login"
+          className="font-medium text-clay-600 hover:underline"
+        >
           Log in
         </Link>
       </p>

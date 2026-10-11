@@ -71,7 +71,7 @@ export async function signUpAction(
   }
 
   revalidatePath("/", "layout");
-  redirect("/profile");
+  redirect("/");
 }
 
 export async function signInAction(
@@ -97,9 +97,9 @@ export async function signInAction(
     return { status: "error", message: humanizeAuthError(error) };
   }
 
-  const redirectTo = String(formData.get("redirectTo") ?? "/profile");
+  const redirectTo = String(formData.get("redirectTo") ?? "/");
   revalidatePath("/", "layout");
-  redirect(redirectTo || "/profile");
+  redirect(redirectTo || "/");
 }
 
 export async function changePasswordAction(

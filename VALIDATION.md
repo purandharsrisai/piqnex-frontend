@@ -80,7 +80,7 @@ need request is a much stronger signal than someone saying "cool idea."
    a listing in the live app, right there if possible. Watching them use it
    in real time surfaces confusing UI faster than any amount of guessing.
 4. Fill in the metrics table above after each batch of interviews.
-5. Revisit `PROJECT_CHECKLIST.md` and reprioritize the "TO DO" section based
+5. Reprioritize the list of features still to build based
    on what you learn - most likely candidates: which categories to seed
    first, whether the exact-matching rule is too strict, and whether people
    trust the contact-seller flow enough to actually reach out.

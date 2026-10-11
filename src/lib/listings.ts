@@ -4,13 +4,10 @@ import type { ConditionOption, PartSearchQuery } from "@/lib/types";
 import type { MatchableFields } from "@/lib/matching";
 
 /**
- * Data-access layer for listings - now calling piqnex-backend (NestJS +
- * Prisma) instead of Supabase directly. Centralizing the API calls here
- * (instead of calling apiFetch from every page) means:
- *  1. Pages stay focused on layout/markup, not query logic.
- *  2. We have one place to fall back to sample data when the backend isn't
- *     reachable yet, or simply has no real listings - the same "fail soft to
- *     sample data" UX the old Supabase version had for "not configured yet".
+ * Data-access layer for listings - calls piqnex-backend (NestJS + Prisma).
+ * Centralizing the API calls here (instead of calling apiFetch from every
+ * page) keeps pages focused on layout/markup, not query logic, and gives one
+ * place to fail soft when the backend is unreachable.
  */
 
 const API_URL = (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/+$/, "");
@@ -57,7 +54,6 @@ function backendRowToCardData(row: BackendListing): ListingCardData {
     condition: row.condition,
     price: Number(row.price),
     location: row.location,
-    isSample: false,
   };
 }
 
@@ -86,8 +82,7 @@ const PAGE_SIZE = 12;
  *
  * NOTE: piqnex-backend's GET /listings only filters `brand` by the
  * structured catalog's brand SLUG (most listings don't have one yet - see
- * CreateListingDto) and has no separate product/model/part filters, unlike
- * the old Supabase version's free-text ilike on each column. We fold the
+ * CreateListingDto) and has no separate product/model/part filters. We fold the
  * free-text brand/product/model/part/q inputs from the search form into a
  * single `q`, which the backend already matches (case-insensitively) across
  * brandName/productName/modelLabel/partName/description - see
@@ -133,8 +128,6 @@ export interface NeedMatchResult {
  * Powers the "I NEED A PART" search (/need). Looks for listings whose
  * brand/product/part match exactly (see lib/matching.ts for the rule, and
  * GET /listings/match on the backend for the equivalent server-side query).
- * Sample data is always included as extra (clearly badged) results so the
- * matching flow demonstrates real behavior before you have live listings.
  */
 export async function getNeedMatches(query: MatchableFields): Promise<NeedMatchResult> {
   try {
@@ -169,10 +162,9 @@ export interface ListingDetail {
   createdAt: string;
   images: string[]; // public URLs, already sorted
   seller: { displayName: string; location: string | null } | null;
-  isSample: boolean;
 }
 
-/** Powers /parts/[id]. Checks the real backend first, falls back to sample data by id. */
+/** Powers /parts/[id]. Returns null when the listing does not exist. */
 export async function getListingDetail(id: string): Promise<ListingDetail | null> {
   try {
     const row = await apiFetch<BackendListing>(`/listings/${id}`, { authenticated: false });
@@ -198,11 +190,9 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
       createdAt: row.createdAt,
       images,
       seller: row.seller ? { displayName: row.seller.displayName, location: row.seller.location } : null,
-      isSample: false,
     };
   } catch {
-    // 404 (or the backend being unreachable) falls through to the sample
-    // lookup below, same fail-soft behavior as the old Supabase version.
+    // 404 (or the backend being unreachable) falls through to "not found" below.
   }
 
   return null;

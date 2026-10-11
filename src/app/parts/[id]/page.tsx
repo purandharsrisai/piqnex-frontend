@@ -38,10 +38,10 @@ export default async function ListingDetailPage({
 
   const viewer = await getCurrentUser();
   const isOwner = !!viewer && viewer.id === listing.sellerId;
-  const isSaved = viewer && !listing.isSample ? (await getSavedIds()).includes(listing.id) : false;
+  const isSaved = viewer ? (await getSavedIds()).includes(listing.id) : false;
 
-  const sellerRating = listing.isSample ? { average: null, count: 0 } : await getSellerRating(listing.sellerId);
-  const eligibility = viewer && !isOwner && !listing.isSample ? await getReviewEligibility(listing.id) : null;
+  const sellerRating = await getSellerRating(listing.sellerId);
+  const eligibility = viewer && !isOwner ? await getReviewEligibility(listing.id) : null;
 
   const justCreated = searchParams.created === "1";
   const needMatches = justCreated
@@ -93,11 +93,6 @@ export default async function ListingDetailPage({
             ) : (
               <ListingImagePlaceholder label={listing.part} />
             )}
-            {listing.isSample && (
-              <Badge tone="sample" className="absolute left-3 top-3 bg-white">
-                Sample listing
-              </Badge>
-            )}
           </div>
           {listing.images.length > 1 && (
             <div className="mt-3 grid grid-cols-5 gap-2">
@@ -146,13 +141,9 @@ export default async function ListingDetailPage({
               {(listing.seller?.displayName ?? "S")[0]?.toUpperCase()}
             </span>
             <div>
-              {listing.isSample ? (
-                <p className="text-sm font-semibold text-ink-900">Sample Seller</p>
-              ) : (
-                <Link href={`/sellers/${listing.sellerId}`} className="text-sm font-semibold text-ink-900 hover:text-clay-600 hover:underline">
-                  {listing.seller?.displayName ?? "Marketplace Seller"}
-                </Link>
-              )}
+              <Link href={`/sellers/${listing.sellerId}`} className="text-sm font-semibold text-ink-900 hover:text-clay-600 hover:underline">
+                {listing.seller?.displayName ?? "Marketplace Seller"}
+              </Link>
               {sellerRating.count > 0 && sellerRating.average !== null && (
                 <p className="flex items-center gap-1.5 text-xs text-ink-500" data-testid="listing-seller-rating">
                   <Stars value={sellerRating.average} /> {sellerRating.average} ({sellerRating.count})
@@ -165,7 +156,7 @@ export default async function ListingDetailPage({
             </div>
           </Card>
 
-          {viewer && !listing.isSample && (
+          {viewer && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {!isOwner && <SaveButton listingId={listing.id} initialSaved={isSaved} withLabel className="border border-ink-200" />}
               {isOwner && (
@@ -192,20 +183,11 @@ export default async function ListingDetailPage({
             <h2 className="text-lg font-bold text-ink-900">Contact seller</h2>
             <p className="mt-1 text-sm text-ink-500">Does this match your product? Send a quick message.</p>
             <div className="mt-3">
-              {listing.isSample ? (
-                <Card className="p-4 text-sm text-ink-500">
-                  This is sample data for demo purposes - there&rsquo;s no real seller to contact.
-                  Try a real listing from <a href="/browse" className="text-clay-600 underline">Browse Parts</a>.
-                </Card>
-              ) : (
-                <ContactSellerForm listingId={listing.id} />
-              )}
+              <ContactSellerForm listingId={listing.id} />
             </div>
-            {!listing.isSample && (
-              <div className="mt-4 border-t border-ink-100 pt-4">
-                <ReportDialog targetType="listing" targetId={listing.id} label="Report this listing" />
-              </div>
-            )}
+            <div className="mt-4 border-t border-ink-100 pt-4">
+              <ReportDialog targetType="listing" targetId={listing.id} label="Report this listing" />
+            </div>
           </div>
           </div>
         </div>

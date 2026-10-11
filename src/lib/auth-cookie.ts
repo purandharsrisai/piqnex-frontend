@@ -6,7 +6,7 @@
  *
  * The backend (piqnex-backend) issues a plain JWT from POST /auth/login and
  * /auth/signup. We store it in an httpOnly cookie (set by
- * src/lib/actions/auth.ts) instead of a Supabase session cookie, and send it
+ * src/lib/actions/auth.ts) and send it
  * back as `Authorization: Bearer <token>` on every API call (see
  * api-client.ts) - the backend's JwtStrategy only reads it from that header,
  * never from a cookie.

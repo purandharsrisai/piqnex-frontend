@@ -1,5 +1,6 @@
 "use client";
 
+import { Toast } from "@/components/ui/Toast";
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Flag } from "lucide-react";
@@ -39,6 +40,7 @@ export function ReportDialog({
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-pop">
             {state.status === "success" ? (
               <>
+                <Toast message="Report submitted." trigger={state} />
                 <p className="font-semibold text-ink-900">{state.message}</p>
                 <Button className="mt-4" size="sm" onClick={() => setOpen(false)}>Close</Button>
               </>

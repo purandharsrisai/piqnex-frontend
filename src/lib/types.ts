@@ -1,7 +1,7 @@
 /**
  * Core domain types for Piqnex.
  *
- * These mirror the PostgreSQL schema in supabase/migrations/0001_init_schema.sql.
+ * These mirror the backend database schema (piqnex-backend/prisma/schema.prisma).
  * Keeping them hand-written (instead of only relying on generated types) makes
  * the app easier to read for someone learning the codebase - you can see the
  * whole data model in one file.
@@ -50,11 +50,6 @@ export interface Product {
   slug: string;
 }
 
-export interface ProductModel {
-  id: string;
-  product_id: string;
-  version_label: string; // e.g. "Generation 1", "2021", or "" if not applicable
-}
 
 export interface Part {
   id: string;
@@ -103,9 +98,6 @@ export interface ListingImage {
   sort_order: number;
 }
 
-export interface ListingWithImages extends Listing {
-  images: ListingImage[];
-}
 
 export interface NeedRequest {
   id: string;
@@ -121,14 +113,6 @@ export interface NeedRequest {
   created_at: string;
 }
 
-export interface ContactRequest {
-  id: string;
-  listing_id: string;
-  buyer_id: string;
-  message: string;
-  contact_info: string | null;
-  created_at: string;
-}
 
 /** Shape of the search/filter form shared by /need and /browse. */
 export interface PartSearchQuery {

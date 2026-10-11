@@ -1,5 +1,6 @@
 "use client";
 
+import { Toast } from "@/components/ui/Toast";
 import { useFormState, useFormStatus } from "react-dom";
 import { createNeedRequestAction } from "@/lib/actions/need";
 import { IDLE_STATE } from "@/lib/actions/types";
@@ -41,10 +42,13 @@ export function CreateNeedRequestForm({
 
   if (state.status === "success") {
     return (
-      <Card className="border-moss-200 bg-moss-50 p-5 text-moss-900">
-        <p className="font-semibold">Request saved</p>
-        <p className="mt-1 text-sm">{state.message}</p>
-      </Card>
+      <>
+        <Toast message="Request saved." trigger={state} />
+        <Card className="border-moss-200 bg-moss-50 p-5 text-moss-900">
+          <p className="font-semibold">Request saved</p>
+          <p className="mt-1 text-sm">{state.message}</p>
+        </Card>
+      </>
     );
   }
 

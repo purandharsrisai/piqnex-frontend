@@ -11,7 +11,7 @@ import {
   Puzzle,
   type LucideIcon,
 } from "lucide-react";
-import { SAMPLE_CATEGORIES } from "@/lib/sample-data";
+import { CATEGORIES } from "@/lib/categories";
 import { Reveal } from "@/components/ui/Reveal";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -36,13 +36,13 @@ export function CategoryGrid() {
             <h2 className="mt-2 font-display text-3xl text-ink-900 sm:text-4xl">Shop by category</h2>
           </div>
           <p className="hidden max-w-xs text-right text-ink-500 sm:block">
-            Starting with electronics &mdash; more categories are coming.
+            Starting with electronics, and more categories are coming.
           </p>
         </div>
       </Reveal>
 
       <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-9">
-        {SAMPLE_CATEGORIES.map((category, i) => {
+        {CATEGORIES.map((category, i) => {
           const Icon = ICONS[category.icon] ?? Puzzle;
           return (
             <Reveal key={category.slug} delay={Math.min(i * 0.04, 0.3)} y={14}>

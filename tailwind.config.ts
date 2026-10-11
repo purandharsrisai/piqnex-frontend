@@ -87,9 +87,19 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "toast-progress": {
+          "0%": { transform: "scaleX(1)" },
+          "100%": { transform: "scaleX(0)" },
+        },
+        "toast-in": {
+          "0%": { opacity: "0", transform: "translateY(-12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         float: "float 6.5s ease-in-out infinite",
+        "toast-in": "toast-in 0.25s ease-out",
+        "toast-progress": "toast-progress linear forwards",
         "float-delayed": "float 6.5s ease-in-out -3.2s infinite",
       },
     },

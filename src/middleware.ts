@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME, decodeJwtPayload, isTokenValid } from "@/lib/auth-cookie";
+import { AUTH_COOKIE_NAME, isTokenValid } from "@/lib/auth-cookie";
 
 /**
- * Route-protection gate, now checking the JWT cookie (set by
+ * Route-protection gate: checks the JWT cookie (set by
  * src/lib/actions/auth.ts after a successful POST /auth/login or
- * /auth/signup against piqnex-backend) instead of a Supabase session - see
- * the old src/lib/supabase/middleware.ts for the previous version of this.
+ * /auth/signup against piqnex-backend).
  *
  * This only decodes the token (no signature verification - that needs a
  * crypto lib and the shared JWT_SECRET, which this Edge middleware doesn't
@@ -16,7 +15,7 @@ import { AUTH_COOKIE_NAME, decodeJwtPayload, isTokenValid } from "@/lib/auth-coo
  */
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const protectedPaths = ["/sell", "/profile", "/admin", "/messages", "/saved"];
+  const protectedPaths = ["/sell", "/profile", "/settings", "/my-listings", "/my-requests", "/messages", "/saved"];
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
   if (!isProtected) {
@@ -30,16 +29,6 @@ export function middleware(request: NextRequest) {
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(redirectUrl);
-  }
-
-  if (pathname.startsWith("/admin")) {
-    const payload = decodeJwtPayload(token!);
-    if (!payload?.isAdmin) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/";
-      redirectUrl.search = "";
-      return NextResponse.redirect(redirectUrl);
-    }
   }
 
   return NextResponse.next();

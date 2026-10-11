@@ -51,8 +51,7 @@ export async function getAuthToken(): Promise<string | undefined> {
 
 /**
  * Fetch wrapper for calling piqnex-backend from Server Components / Server
- * Actions. This is the direct replacement for `createClient()` +
- * `supabase.from(...)` throughout the old lib/*.ts data-access files.
+ * Actions. Adds the signed-in user's token and turns API errors into thrown errors.
  */
 export async function apiFetch<T>(
   path: string,
@@ -98,16 +97,15 @@ export interface CurrentUser {
   location: string | null;
   phone: string | null;
   avatarUrl: string | null;
+  bio: string | null;
   isAdmin: boolean;
   createdAt: string;
 }
 
 /**
- * The backend equivalent of the old `supabase.auth.getUser()` +
- * `profiles` row lookup, combined into one call (GET /profile/me - see
- * ProfileService.getMe, which already merges the user+profile table).
- * Fails soft (returns null) exactly like the old Supabase helpers did when
- * not configured/reachable, instead of throwing and breaking every page.
+ * The signed-in user's account and profile in one call (GET /profile/me - see
+ * ProfileService.getMe). Fails soft: returns null when there is no token or
+ * the backend can't be reached, instead of throwing and breaking every page.
  */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const token = await getAuthToken();

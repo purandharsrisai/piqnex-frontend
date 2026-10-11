@@ -1,79 +1,71 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-const EASE = [0.22, 1, 0.36, 1] as const;
-
-/**
- * Scroll-triggered reveal usable from server components. Always renders the
- * same motion element (so prefers-reduced-motion never causes a hydration
- * mismatch); with reduced motion, content is shown immediately.
- */
-export function Reveal({
-  children,
-  className,
-  delay = 0,
-  y = 20,
-}: {
+interface RevealProps {
   children: ReactNode;
   className?: string;
+  /** Seconds to wait before the animation starts. */
   delay?: number;
+  /** Pixels the content slides up from. */
   y?: number;
-}) {
-  const reduce = useReducedMotion();
-  const visible = { opacity: 1, y: 0 };
+}
 
-  if (reduce) {
-    return (
-      <motion.div className={className} initial={visible} animate={visible} transition={{ duration: 0 }}>
-        {children}
-      </motion.div>
+/**
+ * Fade-and-slide-up animation, done with a plain CSS transition (no animation library).
+ * `start` decides when it plays: right after mount, or when the element scrolls into view.
+ * With prefers-reduced-motion the content is shown immediately, with no movement.
+ */
+function RevealBase({ children, className, delay = 0, y = 20, start }: RevealProps & { start: "mount" | "scroll" }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(true);
+      return;
+    }
+    if (start === "mount") {
+      // Wait one frame so the hidden state is painted first, otherwise there is nothing to transition from.
+      const id = requestAnimationFrame(() => setShown(true));
+      return () => cancelAnimationFrame(id);
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -60px 0px" }
     );
-  }
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [start]);
+
   return (
-    <motion.div
+    <div
+      ref={ref}
       className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={visible}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.55, delay, ease: EASE }}
+      style={{
+        opacity: shown ? 1 : 0,
+        transform: shown ? "none" : `translateY(${y}px)`,
+        transition: `opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s`,
+      }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-/** Plays immediately on mount (above the fold). */
-export function RevealOnMount({
-  children,
-  className,
-  delay = 0,
-  y = 20,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-  y?: number;
-}) {
-  const reduce = useReducedMotion();
-  const visible = { opacity: 1, y: 0 };
+/** Plays when the element scrolls into view (once). */
+export function Reveal(props: RevealProps) {
+  return <RevealBase {...props} start="scroll" />;
+}
 
-  if (reduce) {
-    return (
-      <motion.div className={className} initial={visible} animate={visible} transition={{ duration: 0 }}>
-        {children}
-      </motion.div>
-    );
-  }
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y }}
-      animate={visible}
-      transition={{ duration: 0.6, delay, ease: EASE }}
-    >
-      {children}
-    </motion.div>
-  );
+/** Plays immediately on mount (above the fold). */
+export function RevealOnMount(props: RevealProps) {
+  return <RevealBase {...props} start="mount" />;
 }

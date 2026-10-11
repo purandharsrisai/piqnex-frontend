@@ -5,6 +5,7 @@ import { createContactRequestAction } from "@/lib/actions/contact";
 import { IDLE_STATE } from "@/lib/actions/types";
 import { Field } from "@/components/ui/Field";
 import { Textarea, Input } from "@/components/ui/Input";
+import { Toast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
@@ -22,9 +23,12 @@ export function ContactSellerForm({ listingId }: { listingId: string }) {
 
   if (state.status === "success") {
     return (
-      <Card className="border-moss-200 bg-moss-50 p-4 text-moss-900">
-        <p className="text-sm font-medium">{state.message}</p>
-      </Card>
+      <>
+        <Toast message="Message sent to the seller." trigger={state} />
+        <Card className="border-moss-200 bg-moss-50 p-4 text-moss-900">
+          <p className="text-sm font-medium">{state.message}</p>
+        </Card>
+      </>
     );
   }
 

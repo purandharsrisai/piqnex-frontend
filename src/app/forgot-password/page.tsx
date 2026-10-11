@@ -7,6 +7,7 @@ export const metadata: Metadata = { title: "Forgot Password" };
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
+      illustration
       title="Forgot your password?"
       subtitle="Enter the email you signed up with and we'll get you back in."
     >

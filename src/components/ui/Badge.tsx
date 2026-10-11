@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "clay" | "moss" | "neutral" | "warning" | "sample";
+type Tone = "clay" | "moss" | "neutral" | "warning";
 
 // Small rectangular tags (not fully-rounded pills) with uppercase,
 // letter-spaced text - reads more like a price tag or a printed label than
@@ -10,7 +10,6 @@ const toneClasses: Record<Tone, string> = {
   moss: "bg-moss-100 text-moss-800",
   neutral: "bg-ink-100 text-ink-700",
   warning: "bg-amber-100 text-amber-900",
-  sample: "border border-dashed border-ink-300 text-ink-500",
 };
 
 export function Badge({

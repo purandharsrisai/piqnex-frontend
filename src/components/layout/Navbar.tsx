@@ -17,8 +17,9 @@ export async function Navbar() {
     <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/85 backdrop-blur-xl">
       <NavbarClient
         isLoggedIn={!!user}
-        isAdmin={Boolean(user?.isAdmin)}
         displayName={user?.displayName ?? null}
+        email={user?.email ?? null}
+        avatarUrl={user?.avatarUrl ?? null}
         unread={unread}
       />
     </header>

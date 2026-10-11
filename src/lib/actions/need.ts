@@ -80,9 +80,11 @@ export async function closeNeedRequestAction(requestId: string) {
       body: { status: "closed" },
     });
   } catch {
-    // Fire-and-forget, same as the old Supabase version.
+    // Fire-and-forget: a failed refresh is not worth interrupting the user for.
   }
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
 }
 
 export async function deleteNeedRequestAction(requestId: string) {
@@ -92,7 +94,9 @@ export async function deleteNeedRequestAction(requestId: string) {
   try {
     await apiFetch(`/need-requests/${requestId}`, { method: "DELETE" });
   } catch {
-    // Fire-and-forget, same as the old Supabase version.
+    // Fire-and-forget: a failed refresh is not worth interrupting the user for.
   }
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
 }

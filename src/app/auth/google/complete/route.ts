@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       path: "/",
       maxAge,
     });
-    const dest = /^\/(?!\/)/.test(result.redirectTo) ? result.redirectTo : "/profile";
+    const dest = /^\/(?!\/)/.test(result.redirectTo) ? result.redirectTo : "/";
     return NextResponse.redirect(`${origin}${dest}`);
   } catch {
     return NextResponse.redirect(`${origin}/login?google=failed`);

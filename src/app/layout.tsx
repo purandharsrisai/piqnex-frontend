@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 // Imported once here so every page gets it with no runtime network request.
 import "@fontsource-variable/plus-jakarta-sans/index.css";
 import "./globals.css";
+import { Suspense } from "react";
+import { QueryToast } from "@/components/ui/QueryToast";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
@@ -49,6 +51,9 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Suspense fallback={null}>
+          <QueryToast />
+        </Suspense>
       </body>
     </html>
   );

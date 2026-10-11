@@ -11,14 +11,21 @@ export default function LoginPage({
   searchParams: { redirectTo?: string; reset?: string; google?: string };
 }) {
   return (
-    <AuthShell title="Welcome back" subtitle="Log in to manage your listings and requests.">
+    <AuthShell
+      illustration
+      title="Welcome back"
+      subtitle="Log in to manage your listings and requests."
+    >
       {searchParams.reset === "success" && (
         <p className="mb-5 rounded-xl bg-moss-50 px-4 py-3 text-sm font-semibold text-moss-700">
           Your password has been updated. Log in with your new password.
         </p>
       )}
       {searchParams.google && (
-        <p role="alert" className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
           {searchParams.google === "cancelled"
             ? "Google sign-in was cancelled."
             : searchParams.google === "unverified"

@@ -13,7 +13,7 @@ export default function ResetPasswordPage({
   const token = searchParams.token;
 
   return (
-    <AuthShell title="Set a new password" subtitle="Choose a new password for your account.">
+    <AuthShell illustration title="Set a new password" subtitle="Choose a new password for your account.">
         {token ? (
           <ResetPasswordForm token={token} />
         ) : (

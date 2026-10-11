@@ -1,11 +1,11 @@
-import Link from "next/link";
+// import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { LinkButton } from "@/components/ui/Button";
 import { RevealOnMount } from "@/components/ui/Reveal";
 import { SearchBar } from "./SearchBar";
 import { HeroVisual } from "./HeroVisual";
 
-const POPULAR = ["Earbud charging case", "Laptop charger", "Controller thumbstick", "Watch strap"];
+// const POPULAR = ["Earbud charging case", "Laptop charger", "Controller thumbstick", "Watch strap"];
 
 export function Hero() {
   return (
@@ -53,13 +53,14 @@ export function Hero() {
           <RevealOnMount delay={0.16}>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-600 sm:text-xl">
               Lost an earbud, a charger, a controller stick? Buy the one missing part from someone
-              who has it spare &mdash; or sell the one gathering dust in your drawer.
+              who has it spare or sell the one gathering dust in your drawer.
             </p>
           </RevealOnMount>
 
           <RevealOnMount delay={0.24}>
             <div className="mt-8 max-w-xl">
               <SearchBar />
+              {/* Popular searches - hidden for now, uncomment to bring back (also uncomment POPULAR and the Link import)
               <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-500">
                 <span className="font-semibold text-ink-700">Popular:</span>
                 {POPULAR.map((term) => (
@@ -72,6 +73,7 @@ export function Hero() {
                   </Link>
                 ))}
               </p>
+              */}
             </div>
           </RevealOnMount>
 

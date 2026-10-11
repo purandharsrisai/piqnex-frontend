@@ -7,8 +7,7 @@ import { formatPrice } from "@/lib/utils";
 import type { ConditionOption } from "@/lib/types";
 
 /**
- * Normalized shape both real Supabase listings and dev sample listings can
- * be mapped into, so ListingCard doesn't need to know which one it's given.
+ * The shape of a listing as the card needs it.
  */
 export interface ListingCardData {
   id: string;
@@ -20,7 +19,6 @@ export interface ListingCardData {
   condition: ConditionOption;
   price: number;
   location?: string | null;
-  isSample?: boolean;
 }
 
 const conditionTone: Record<ConditionOption, "moss" | "clay" | "neutral" | "warning"> = {
@@ -37,9 +35,7 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
     <Link href={`/parts/${listing.id}`} className="group block focus-visible:outline-none">
       <article className="transition-transform duration-200 group-hover:-translate-y-1">
         <div
-          className={`relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-ink-100 shadow-card transition-shadow duration-200 group-hover:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-clay-600 ${
-            listing.isSample ? "ring-1 ring-inset ring-ink-200" : ""
-          }`}
+          className={`relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-ink-100 shadow-card transition-shadow duration-200 group-hover:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-clay-600`}
         >
           {listing.imageUrl ? (
             <Image
@@ -61,11 +57,6 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
           >
             {listing.condition}
           </Badge>
-          {listing.isSample && (
-            <span className="absolute bottom-3 right-3 rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
-              Sample
-            </span>
-          )}
         </div>
         {/* The part is the product here - it leads; brand/model is context. */}
         <div className="px-1 pt-3.5">

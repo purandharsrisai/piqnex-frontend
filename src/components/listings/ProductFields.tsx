@@ -20,7 +20,7 @@ export function ProductFields({
   defaults,
   errors,
   partLabel = "Part / Component",
-  partPlaceholder = "e.g. Right Earbud, 65W Charger, Battery",
+  partPlaceholder = "e.g. Charger, Battery cover, Thumbstick",
 }: {
   defaults?: ProductFieldsDefaults;
   errors?: Record<string, string>;
@@ -38,7 +38,7 @@ export function ProductFields({
       <Field label="Product" required error={errors?.product}>
         <Input
           name="product"
-          placeholder="e.g. WF-1000XM4, Inspiron 15 5510"
+          placeholder="e.g. Inspiron 15 5510, DualSense"
           defaultValue={defaults?.product ?? ""}
         />
       </Field>

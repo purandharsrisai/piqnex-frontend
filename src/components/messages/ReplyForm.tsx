@@ -1,5 +1,6 @@
 "use client";
 
+import { Toast } from "@/components/ui/Toast";
 import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { sendMessageAction } from "@/lib/actions/messages";
@@ -26,6 +27,7 @@ export function ReplyForm({ conversationId }: { conversationId: string }) {
   return (
     <form ref={ref} action={action} className="flex flex-col gap-2">
       <input type="hidden" name="conversationId" value={conversationId} />
+      <Toast message={state.status === "success" ? "Message sent." : null} trigger={state} />
       {state.status === "error" && (
         <p role="alert" className="text-sm font-medium text-red-600">{state.message}</p>
       )}

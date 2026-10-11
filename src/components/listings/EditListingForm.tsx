@@ -4,6 +4,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { updateListingAction } from "@/lib/actions/listings";
 import { IDLE_STATE } from "@/lib/actions/types";
 import { Field } from "@/components/ui/Field";
+import { PriceInput } from "@/components/ui/PriceInput";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ConditionSelect } from "./ConditionSelect";
@@ -45,7 +46,7 @@ export function EditListingForm({ listing }: { listing: ListingDetail }) {
           <ConditionSelect name="condition" defaultValue={listing.condition} />
         </Field>
         <Field label="Price (INR)" required error={errors.price}>
-          <Input name="price" type="number" min={0} step="1" defaultValue={listing.price} />
+          <PriceInput name="price" defaultValue={listing.price} />
         </Field>
       </div>
       <Field label="Description" required error={errors.description}>

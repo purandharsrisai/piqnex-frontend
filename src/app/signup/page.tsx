@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: "Sign Up" };
 export default function SignupPage() {
   return (
     <AuthShell
+      illustration
       title="Create your account"
       subtitle="Buy, sell, and find missing pieces - it's free to join."
       wide

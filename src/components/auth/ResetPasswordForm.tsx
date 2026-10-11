@@ -23,7 +23,10 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="token" value={token} />
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
           {state.message}
         </p>
       )}
@@ -35,7 +38,11 @@ export function ResetPasswordForm({ token }: { token: string }) {
       >
         <PasswordInput name="newPassword" autoComplete="new-password" />
       </Field>
-      <Field label="Confirm new password" required error={state.fieldErrors?.confirmPassword}>
+      <Field
+        label="Confirm new password"
+        required
+        error={state.fieldErrors?.confirmPassword}
+      >
         <PasswordInput name="confirmPassword" autoComplete="new-password" />
       </Field>
       <SubmitButton />

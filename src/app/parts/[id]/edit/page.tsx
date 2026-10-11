@@ -15,7 +15,7 @@ export default async function EditListingPage({ params }: { params: { id: string
   if (!user) redirect(`/login?redirectTo=${encodeURIComponent(`/parts/${params.id}/edit`)}`);
 
   const listing = await getListingDetail(params.id);
-  if (!listing || listing.isSample || listing.sellerId !== user.id) notFound();
+  if (!listing || listing.sellerId !== user.id) notFound();
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">

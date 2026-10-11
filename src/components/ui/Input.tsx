@@ -1,4 +1,5 @@
 import { type InputHTMLAttributes, forwardRef } from "react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -53,20 +54,28 @@ export const Select = forwardRef<
   HTMLSelectElement,
   React.SelectHTMLAttributes<HTMLSelectElement> & { error?: string }
 >(({ className, error, children, ...props }, ref) => {
+  // The browser's own dropdown arrow looks different on every system and sits
+  // flush against the edge, so hide it and draw one at a fixed, consistent spot.
   return (
-    <select
-      ref={ref}
-      className={cn(
-        "w-full rounded-xl border bg-white px-3.5 py-2.5 text-[15px] text-ink-900 transition-colors",
-        "focus:outline-none focus:ring-2 focus:ring-clay-400 focus:border-clay-400",
-        error ? "border-red-400" : "border-ink-200",
-        className
-      )}
-      aria-invalid={!!error}
-      {...props}
-    >
-      {children}
-    </select>
+    <div className="relative w-full">
+      <select
+        ref={ref}
+        className={cn(
+          "w-full appearance-none rounded-xl border bg-white py-2.5 pl-3.5 pr-10 text-[15px] text-ink-900 transition-colors",
+          "focus:outline-none focus:ring-2 focus:ring-clay-400 focus:border-clay-400",
+          error ? "border-red-400" : "border-ink-200",
+          className
+        )}
+        aria-invalid={!!error}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500"
+        aria-hidden="true"
+      />
+    </div>
   );
 });
 Select.displayName = "Select";

@@ -6,6 +6,9 @@ import { NoMatchState } from "@/components/ui/States";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { getNeedMatches } from "@/lib/listings";
+import { FormPageLayout } from "@/components/forms/FormPageLayout";
+import { SideGuide } from "@/components/forms/SideGuide";
+import { FindArt } from "@/components/auth/slide-art";
 
 export const metadata: Metadata = {
   title: "I Need a Part",
@@ -40,13 +43,33 @@ export default async function NeedPage({
         title="Tell us what's missing"
         subtitle="Tell us exactly what you have and what's missing. We'll look for a seller with the same brand, product, model, and part."
       />
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <Card className="rounded-3xl p-5 shadow-pop sm:p-8">
-        <NeedSearchForm defaults={{ category, brand, product, model, part, description, location }} />
-      </Card>
+      <FormPageLayout
+        form={
+          <Card className="rounded-3xl p-5 shadow-pop sm:p-8">
+            <NeedSearchForm defaults={{ category, brand, product, model, part, description, location }} />
+          </Card>
+        }
+        side={
+          <SideGuide
+            art={<FindArt className="h-full w-full" />}
+            title="How we find your part"
+            steps={[
+              { title: "Tell us what's missing", text: "The product you own and the one part you need." },
+              { title: "We look for exact matches", text: "Same brand, product, model and part - no guesswork." },
+              { title: "Nothing yet? We'll email you", text: "Save a request and we'll tell you the moment someone lists it." },
+            ]}
+            tipsTitle="Get a better match"
+            tips={[
+              "Check the model name on the product or its box.",
+              "Be specific about the part, e.g. 'Battery cover' not 'Cover'.",
+              "Add your city to see nearby sellers first.",
+            ]}
+          />
+        }
+      />
 
       {hasSearched && results && (
-        <div className="mt-10">
+        <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
           {results.matches.length > 0 ? (
             <>
               <div className="mb-4 flex items-center gap-2">
@@ -77,7 +100,6 @@ export default async function NeedPage({
           )}
         </div>
       )}
-      </div>
     </div>
   );
 }

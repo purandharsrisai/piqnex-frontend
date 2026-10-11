@@ -1,5 +1,6 @@
 "use client";
 
+import { Toast } from "@/components/ui/Toast";
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { forgotPasswordAction } from "@/lib/actions/auth";
@@ -23,22 +24,29 @@ export function ForgotPasswordForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       {state.status === "error" && state.message && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
           {state.message}
         </p>
       )}
-      {state.status === "success" && state.message && (
-        <p className="rounded-xl bg-moss-50 px-4 py-3 text-sm font-medium text-moss-700">
-          {state.message}
-        </p>
-      )}
+      <Toast message={state.status === "success" ? state.message : null} trigger={state} />
       <Field label="Email" required error={state.fieldErrors?.email}>
-        <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" />
+        <Input
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+        />
       </Field>
       <SubmitButton />
       <p className="text-center text-sm text-ink-500">
         Remembered your password?{" "}
-        <Link href="/login" className="font-medium text-clay-600 hover:underline">
+        <Link
+          href="/login"
+          className="font-medium text-clay-600 hover:underline"
+        >
           Log in
         </Link>
       </p>

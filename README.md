@@ -6,16 +6,15 @@ A marketplace where people can buy, sell, or ask for individual missing,
 spare, or leftover components of products - a lost earbud, a laptop
 charger, a controller battery cover, a furniture wheel, and so on.
 
-This is an MVP built to validate the idea, not a finished product. See
-`PROJECT_CHECKLIST.md` for what's done and what's next, and `VALIDATION.md`
-for how to test whether people actually want this.
+This is an MVP built to validate the idea, not a finished product. The git
+history shows what has been built so far, and `VALIDATION.md` explains how to
+test whether people actually want this.
 
 ## Tech stack
 
 - **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **Backend:** Next.js Server Actions + Route Handlers
-- **Database/Auth/Storage:** Supabase (PostgreSQL, Supabase Auth, Supabase Storage)
-- **Hosting:** Vercel
+- **Backend:** a separate NestJS API in `../piqnex-backend` (PostgreSQL via Prisma, JWT login). The frontend's Server Actions call it.
+- **Hosting:** Vercel (frontend) plus any Node host for the API
 
 ## Versioning & commit messages
 
@@ -32,42 +31,26 @@ can read the project's history and understand it. This applies even to
 small changes: instead of "fix bug", write something like "Fixed an issue
 where the login button didn't work on mobile phones."
 
-## 1. Run it locally (works even without Supabase, using sample data)
+## 1. Run it locally
+
+You need the backend running first (see `../piqnex-backend/README.md`: start Postgres,
+run `npx prisma migrate deploy`, then `npm run start:dev`; it listens on port 4000).
 
 ```bash
+cp .env.example .env.local   # then adjust if your backend is not on port 4000
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000. The homepage, browse page, and search will all
-work using sample/demo data (clearly marked with a "Sample" badge) even
-before you've set up Supabase. Signup, login, publishing real listings, and
-saving need requests need a real Supabase project - see step 2.
+Open http://localhost:3000. Only real listings from real users are shown -
+sign up at `/signup`, then use `/sell` to publish one.
 
-## 2. Connect Supabase (needed for accounts, real listings, and photos)
+## 2. Environment variables
 
-1. Go to https://supabase.com, create a free account, and create a new
-   project.
-2. In your project, open **SQL Editor** and run, in this order:
-   - `supabase/migrations/0001_init_schema.sql` (tables, indexes, security rules)
-   - `supabase/migrations/0002_storage.sql` (photo storage bucket + rules)
-   - `supabase/seed.sql` (starter categories/brands/products/parts)
-3. Open **Settings -> API** and copy your **Project URL** and **anon public
-   key**.
-4. Copy `.env.example` to `.env.local` and fill in those two values:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-5. Restart the dev server (`npm run dev`). Sign up for an account at
-   `/signup`, then try `/sell` to publish a real listing and `/need` to save
-   a real need request.
-
-**Why this two-step design?** So you (or anyone reviewing this project)
-can see the whole UI and click around immediately, without first creating
-a cloud account. That matters for a beginner exploring the code, and it
-matters for validating the idea quickly (see `VALIDATION.md`).
+See `.env.example`. The important ones: `API_URL` / `NEXT_PUBLIC_API_URL` (the
+backend address), `NEXT_PUBLIC_SITE_URL` (the public website address, used for
+SEO and the sitemap) and `BACKEND_URL` (the backend address, used for the
+"Continue with Google" button).
 
 ## 3. Useful commands
 
@@ -102,14 +85,11 @@ src/
     validations.ts     Zod schemas - used for both client and server validation
     matching.ts         The MVP matching engine (see below)
     listings.ts, need-requests.ts, profile-data.ts   Data-access functions
-    sample-data.ts      Dev/demo data (never written to the real database)
+    categories.ts       The category list used by the home grid and dropdowns
     actions/           Server Actions (the "backend") - auth, listings, need
                        requests, contact requests, profile updates
-    supabase/          Supabase client setup (browser, server, middleware)
-  middleware.ts        Redirects signed-out users away from /sell and /profile
-supabase/
-  migrations/          SQL migration files - run these in the Supabase SQL Editor
-  seed.sql             Starter catalog data (categories/brands/products/parts)
+    api-client.ts      Talks to the NestJS backend
+  middleware.ts        Redirects signed-out users away from pages that need a login
 ```
 
 ## 5. How matching works (MVP)
@@ -124,15 +104,13 @@ compatibility engine later without a breaking schema change.
 
 ## 6. Deploying
 
-See `PROJECT_CHECKLIST.md` -> "Deployment" for the step-by-step Vercel +
-Supabase production setup.
+Deploy the frontend to Vercel and the backend and Postgres to a Node host. Set the
+environment variables above on the host (never commit `.env.local`).
 
 ## 7. Security notes
 
-- Every table has Row Level Security enabled - see the policies at the
-  bottom of `supabase/migrations/0001_init_schema.sql`. Users can only
-  edit/delete their own listings and need requests, even if someone
-  tampers with client-side requests.
+- Authorization is enforced by the backend (JWT login, owner checks on every edit/delete),
+  not by the browser.
 - All form input is validated on the server with Zod (`src/lib/validations.ts`),
   not just in the browser.
 - `.env.local` (your real secrets) is git-ignored. Never commit it. Only

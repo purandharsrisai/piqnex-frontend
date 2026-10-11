@@ -46,7 +46,7 @@ export async function createListingAction(
   // The structured catalog (categories/brands/products) starts nearly
   // empty - most listings are free text only (brandName/productName/etc on
   // the Listing itself). We still look up categoryId when the slug happens
-  // to match a real category, same as the old Supabase version did.
+  // to match a real category.
   let categoryId: string | undefined;
   try {
     const categories = await apiFetch<Category[]>("/catalog/categories", { authenticated: false });
@@ -58,8 +58,8 @@ export async function createListingAction(
   // Photos are optional, and piqnex-backend's upload endpoint isn't wired up
   // to real storage yet (see UploadsService - it's an intentional stub
   // until S3/R2 credentials are added). We still try, but a failure here
-  // never blocks publishing the listing itself - same "a part with fewer
-  // photos is still published" behavior as the original Supabase version.
+  // never blocks publishing the listing itself - a part with fewer
+  // photos is still published.
   const files = formData
     .getAll("images")
     .filter((f): f is File => f instanceof File && f.size > 0)
@@ -113,11 +113,12 @@ export async function updateListingStatusAction(listingId: string, status: "acti
   try {
     await apiFetch(`/listings/${listingId}/status`, { method: "PATCH", body: { status } });
   } catch {
-    // Ownership/not-found errors from the backend are deliberately silent
-    // here, matching the old version's fire-and-forget update.
+    // Ownership/not-found errors from the backend are deliberately silent here.
   }
 
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
   revalidatePath(`/parts/${listingId}`);
   revalidatePath("/browse");
   revalidatePath("/");
@@ -134,6 +135,8 @@ export async function deleteListingAction(listingId: string) {
   }
 
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
   revalidatePath("/browse");
   revalidatePath("/");
 }
@@ -192,6 +195,8 @@ export async function updateListingAction(
   revalidatePath(`/parts/${id}`);
   revalidatePath("/browse");
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
   revalidatePath("/");
   redirect(`/parts/${id}?updated=1`);
 }
