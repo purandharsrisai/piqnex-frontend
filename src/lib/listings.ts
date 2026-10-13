@@ -15,7 +15,7 @@ const API_URL = (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http
 /** Builds a displayable URL for an uploaded listing image's storage path. */
 export function publicImageUrl(storagePath: string): string | null {
   if (!storagePath) return null;
-  if (/^https?:\/\//.test(storagePath)) return storagePath;
+  if (/^https?:\/\//.test(storagePath) || storagePath.startsWith("/")) return storagePath;
   return `${API_URL}/uploads/${storagePath}`;
 }
 

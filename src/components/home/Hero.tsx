@@ -59,7 +59,7 @@ export function Hero() {
 
           <RevealOnMount delay={0.24}>
             <div className="mt-8 max-w-xl">
-              <SearchBar />
+              {/* <SearchBar /> */}
               {/* Popular searches - hidden for now, uncomment to bring back (also uncomment POPULAR and the Link import)
               <p className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-500">
                 <span className="font-semibold text-ink-700">Popular:</span>

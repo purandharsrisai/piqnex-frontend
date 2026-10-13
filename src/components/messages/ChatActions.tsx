@@ -6,8 +6,8 @@ import { ReportDialog } from "./ReportDialog";
 
 export function ChatActions({ userId, conversationId }: { userId: string; conversationId: string; listingId: string }) {
   return (
-    <div className="flex shrink-0 flex-col items-end gap-2">
-      <ReportDialog targetType="user" targetId={userId} label="Report user" />
+    <div className="flex shrink-0 items-center gap-4">
+      <ReportDialog targetType="user" targetId={userId} label="Report" />
       <button
         type="button"
         onClick={() => {

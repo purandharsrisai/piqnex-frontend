@@ -24,6 +24,11 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 
+  // Demo mode: signed in unless the visitor signed out (see src/lib/demo-data.ts).
+  if (process.env.NEXT_PUBLIC_DEMO === "true" && !request.cookies.get("piqnex_demo_signed_out")) {
+    return NextResponse.next();
+  }
+
   if (!isTokenValid(token)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";

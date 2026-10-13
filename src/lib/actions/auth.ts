@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { apiFetch, ApiError, getCurrentUser } from "@/lib/api-client";
+import { DEMO_MODE, DEMO_SIGNED_OUT_COOKIE } from "@/lib/demo-data";
 import { AUTH_COOKIE_NAME, decodeJwtPayload } from "@/lib/auth-cookie";
 import {
   authSchema,
@@ -43,6 +44,12 @@ export async function signUpAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  if (DEMO_MODE) {
+    // Demo mode has no real accounts: any sign-up just enters the demo.
+    (await cookies()).delete(DEMO_SIGNED_OUT_COOKIE);
+    revalidatePath("/", "layout");
+    redirect("/");
+  }
   const parsed = signupSchema.safeParse({
     displayName: formData.get("displayName"),
     email: formData.get("email"),
@@ -78,6 +85,12 @@ export async function signInAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  if (DEMO_MODE) {
+    // Demo mode has no real accounts: any sign-in just enters the demo.
+    (await cookies()).delete(DEMO_SIGNED_OUT_COOKIE);
+    revalidatePath("/", "layout");
+    redirect(String(formData.get("redirectTo") ?? "/") || "/");
+  }
   const parsed = authSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -242,6 +255,7 @@ export async function signOutAction() {
   }
 
   cookieStore.delete(AUTH_COOKIE_NAME);
+  if (DEMO_MODE) cookieStore.set(DEMO_SIGNED_OUT_COOKIE, "1", { path: "/", sameSite: "lax" });
   revalidatePath("/", "layout");
   redirect("/");
 }

@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api-client";
+import { publicImageUrl } from "@/lib/listings";
 
 export interface ChatUser {
   id: string;
@@ -8,7 +9,18 @@ export interface ChatUser {
 
 export interface ConversationSummary {
   id: string;
-  listing: { id: string; partName: string; productName: string; brandName: string };
+  listing: {
+    id: string;
+    partName: string;
+    productName: string;
+    brandName: string;
+    price: number;
+    currency: string;
+    status: string;
+    imageUrl: string | null;
+  };
+  /** "buying" = you asked about someone else's part; "selling" = someone asked about yours. */
+  role: "buying" | "selling";
   other: ChatUser;
   lastMessage: { id: string; senderId: string; body: string; createdAt: string } | null;
   lastMessageAt: string;
@@ -29,26 +41,56 @@ export interface ConversationThread {
     partName: string;
     productName: string;
     brandName: string;
+    modelLabel: string | null;
+    condition: string;
+    location: string | null;
+    sellerId: string;
     price: string;
     currency: string;
     status: string;
+    imageUrl: string | null;
   };
   other: ChatUser;
   me: string;
+  /** When you last opened this chat, before today's visit (null = never). */
+  myReadAt: string | null;
+  /** When the other person last opened it (null = never). */
+  otherReadAt: string | null;
   messages: ChatMessage[];
+}
+
+interface BackendConversationSummary extends Omit<ConversationSummary, "listing"> {
+  listing: Omit<ConversationSummary["listing"], "imageUrl" | "price"> & {
+    price: number | string;
+    images?: { storagePath: string; sortOrder: number }[];
+  };
 }
 
 export async function getConversations(): Promise<ConversationSummary[]> {
   try {
-    return await apiFetch<ConversationSummary[]>("/conversations");
+    const rows = await apiFetch<BackendConversationSummary[]>("/conversations");
+    return rows.map(({ listing: { images, price, ...listing }, ...row }) => ({
+      ...row,
+      listing: {
+        ...listing,
+        price: Number(price),
+        imageUrl: images?.[0] ? publicImageUrl(images[0].storagePath) : null,
+      },
+    }));
   } catch {
     return [];
   }
 }
 
+interface BackendThread extends Omit<ConversationThread, "listing"> {
+  listing: Omit<ConversationThread["listing"], "imageUrl"> & { images?: { storagePath: string; sortOrder: number }[] };
+}
+
 export async function getThread(id: string): Promise<ConversationThread | null> {
   try {
-    return await apiFetch<ConversationThread>(`/conversations/${id}`);
+    const t = await apiFetch<BackendThread>(`/conversations/${id}`);
+    const { images, ...listing } = t.listing;
+    return { ...t, listing: { ...listing, imageUrl: images?.[0] ? publicImageUrl(images[0].storagePath) : null } };
   } catch {
     return null;
   }
