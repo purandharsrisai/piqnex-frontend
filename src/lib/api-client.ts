@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME } from "./auth-cookie";
-import { DEMO_MODE, DEMO_SIGNED_OUT_COOKIE, DemoHttpError, demoRequest } from "./demo-data";
 
 /**
  * Base URL of the piqnex-backend NestJS API. Falls back to the default local
@@ -47,7 +46,6 @@ function buildUrl(path: string, query?: ApiFetchOptions["query"]) {
 /** Reads the JWT cookie set by src/lib/actions/auth.ts, if any. */
 export async function getAuthToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
-  if (DEMO_MODE) return cookieStore.get(DEMO_SIGNED_OUT_COOKIE) ? undefined : "demo-token";
   return cookieStore.get(AUTH_COOKIE_NAME)?.value;
 }
 
@@ -60,17 +58,6 @@ export async function apiFetch<T>(
   options: ApiFetchOptions = {},
 ): Promise<T> {
   const { method = "GET", body, query, authenticated = true } = options;
-
-  if (DEMO_MODE) {
-    // Sample data instead of the backend - see src/lib/demo-data.ts.
-    const signedIn = !!(await getAuthToken());
-    try {
-      return demoRequest(method, path, query ?? {}, body, signedIn) as T;
-    } catch (error) {
-      if (error instanceof DemoHttpError) throw new ApiError(error.status, error.message);
-      throw error;
-    }
-  }
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (authenticated) {

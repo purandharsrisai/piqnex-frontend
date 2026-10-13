@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { apiFetch, ApiError, getCurrentUser } from "@/lib/api-client";
 import { AUTH_COOKIE_NAME } from "@/lib/auth-cookie";
-import { DEMO_MODE } from "@/lib/demo-data";
 import type { ActionState } from "./types";
 
 export async function sendMessageAction(
@@ -32,8 +31,7 @@ export async function sendMessageAction(
 /**
  * Sends a photo (already shrunk to a small JPEG in the browser) as a chat message
  * stored as "Photo: <where it lives>". With real storage the photo is uploaded first;
- * until photo storage is set up on the backend this reports that clearly (demo mode
- * keeps the picture inside the message so you can try the UI).
+ * until photo storage is set up on the backend this reports that clearly.
  */
 export async function sendPhotoAction(conversationId: string, dataUrl: string): Promise<ActionState> {
   const user = await getCurrentUser();
@@ -42,14 +40,11 @@ export async function sendPhotoAction(conversationId: string, dataUrl: string): 
   if (dataUrl.length > 450_000) return { status: "error", message: "That photo is too large. Try a smaller one." };
 
   try {
-    let ref = dataUrl;
-    if (!DEMO_MODE) {
-      const uploaded = await apiFetch<{ storagePath: string }>("/uploads/listing-image", {
-        method: "POST",
-        body: { filename: "chat-photo.jpg", contentType: "image/jpeg" },
-      });
-      ref = uploaded.storagePath;
-    }
+    const uploaded = await apiFetch<{ storagePath: string }>("/uploads/listing-image", {
+      method: "POST",
+      body: { filename: "chat-photo.jpg", contentType: "image/jpeg" },
+    });
+    const ref = uploaded.storagePath;
     await apiFetch(`/conversations/${conversationId}/messages`, { method: "POST", body: { body: `Photo: ${ref}` } });
   } catch (e) {
     return {
