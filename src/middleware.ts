@@ -1,8 +1,42 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { NextResponse, type NextRequest } from "next/server";
+import { AUTH_COOKIE_NAME, isTokenValid } from "@/lib/auth-cookie";
 
-export async function middleware(request: NextRequest) {
-  return updateSession(request);
+/**
+ * Route-protection gate: checks the JWT cookie (set by
+ * src/lib/actions/auth.ts after a successful POST /auth/login or
+ * /auth/signup against piqnex-backend).
+ *
+ * This only decodes the token (no signature verification - that needs a
+ * crypto lib and the shared JWT_SECRET, which this Edge middleware doesn't
+ * have). That's an acceptable tradeoff here: it's purely a UX redirect for
+ * signed-out visitors, never the actual authorization boundary - every real
+ * read/write still goes through the backend's JwtAuthGuard, which DOES
+ * verify the signature server-side.
+ */
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const protectedPaths = ["/sell", "/profile", "/settings", "/my-listings", "/my-requests", "/messages", "/saved"];
+  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
+
+  if (!isProtected) {
+    return NextResponse.next();
+  }
+
+  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+
+  // Demo mode: signed in unless the visitor signed out (see src/lib/demo-data.ts).
+  if (process.env.NEXT_PUBLIC_DEMO === "true" && !request.cookies.get("piqnex_demo_signed_out")) {
+    return NextResponse.next();
+  }
+
+  if (!isTokenValid(token)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

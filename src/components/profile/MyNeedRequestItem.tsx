@@ -12,12 +12,14 @@ export function MyNeedRequestItem({ request }: { request: MyNeedRequest }) {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <Card className="flex items-center gap-4 p-3">
+    <Card className="flex flex-col gap-3 rounded-2xl p-4 transition-shadow hover:shadow-card-hover sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink-900">
-          {request.brand} {request.product} - {request.part}
+        <p className="truncate text-base font-bold text-ink-900">{request.part}</p>
+        <p className="truncate text-sm text-ink-500">
+          {request.brand} {request.product}
+          {request.model ? ` · ${request.model}` : ""}
         </p>
-        <Badge tone={request.status === "open" ? "clay" : "neutral"} className="mt-1">
+        <Badge tone={request.status === "open" ? "clay" : "neutral"} className="mt-2">
           {request.status}
         </Badge>
       </div>
@@ -30,7 +32,7 @@ export function MyNeedRequestItem({ request }: { request: MyNeedRequest }) {
             onClick={() => startTransition(() => closeNeedRequestAction(request.id))}
             title="Mark as no longer needed"
           >
-            <XCircle className="h-4 w-4" aria-hidden="true" />
+            <XCircle className="h-4 w-4" aria-hidden="true" /> Close
           </Button>
         )}
         <Button
@@ -44,7 +46,7 @@ export function MyNeedRequestItem({ request }: { request: MyNeedRequest }) {
           }}
           title="Delete"
         >
-          <Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" />
+          <Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" /> <span className="sr-only">Delete</span>
         </Button>
       </div>
     </Card>

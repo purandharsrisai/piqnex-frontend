@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail } from "lucide-react";
-import { ContentPage, ContentSection, CONTACT_EMAIL } from "@/components/content/ContentPage";
+import { Clock, Mail, ShieldCheck } from "lucide-react";
+import { CONTACT_EMAIL } from "@/components/content/ContentPage";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { LinkButton } from "@/components/ui/Button";
+import { ContactForm } from "@/components/support/ContactForm";
+import { getCurrentUser } from "@/lib/api-client";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -11,72 +13,57 @@ export const metadata: Metadata = {
     "Get in touch with the Piqnex team - questions, feedback, account help, or reporting a listing.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  // Pre-fill name and email for signed-in users.
+  const user = await getCurrentUser();
+
   return (
-    <ContentPage
-      title="Contact Us"
-      intro={<>Questions, feedback, or something not working? We&rsquo;d love to hear from you.</>}
-    >
-      <Card className="flex flex-col items-center gap-4 p-8 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-clay-100 text-clay-700">
-          <Mail className="h-6 w-6" />
-        </div>
-        <div>
-          <p className="text-sm text-ink-500">Email us at</p>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className="font-display text-xl text-ink-900 hover:text-clay-700"
-          >
-            {CONTACT_EMAIL}
-          </a>
-        </div>
-        <LinkButton href={`mailto:${CONTACT_EMAIL}`} size="lg">
-          Send an Email
-        </LinkButton>
-        <p className="text-sm text-ink-400">We usually reply within 2 business days.</p>
-      </Card>
+    <div className="pb-16">
+      <PageHeader
+        title="Contact Us"
+        subtitle="Questions, feedback, or something not working? Send us a message and we'll get back to you."
+      />
+      <div className="mx-auto grid max-w-5xl gap-8 px-4 pt-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Card className="rounded-3xl p-6 sm:p-8">
+          <ContactForm defaultName={user?.displayName ?? ""} defaultEmail={user?.email ?? ""} />
+        </Card>
 
-      <ContentSection title="What we can help with">
-        <ul>
-          <li>
-            <strong className="text-ink-800">Account help</strong> - trouble logging in, signing
-            up, or updating your profile.
-          </li>
-          <li>
-            <strong className="text-ink-800">Listings and requests</strong> - questions about
-            posting an &ldquo;I Have&rdquo; listing or an &ldquo;I Need&rdquo; request.
-          </li>
-          <li>
-            <strong className="text-ink-800">Reporting a problem</strong> - a suspicious listing,
-            an abusive message, or a bug on the site.
-          </li>
-          <li>
-            <strong className="text-ink-800">Feedback and ideas</strong> - parts or products
-            you&rsquo;d like to see, or anything we could do better.
-          </li>
-        </ul>
-      </ContentSection>
-
-      <ContentSection title="Help us help you faster">
-        <p>When you write in, it helps to include:</p>
-        <ul>
-          <li>The email address on your Piqnex account, if you have one.</li>
-          <li>A link to the listing or request you&rsquo;re asking about.</li>
-          <li>For bugs, what you were doing and what you expected to happen.</li>
-        </ul>
-        <p>
-          Please don&rsquo;t send passwords or payment details by email - we&rsquo;ll never ask
-          for them.
-        </p>
-      </ContentSection>
-
-      <ContentSection title="Before you write">
-        <p>
-          New to Piqnex? <Link href="/how-it-works">How It Works</Link> covers posting requests,
-          listing spare parts, and how matching works. For how we handle your data, see our{" "}
-          <Link href="/privacy">Privacy Policy</Link>.
-        </p>
-      </ContentSection>
-    </ContentPage>
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+          <Card className="flex gap-3 rounded-2xl bg-clay-50 p-5">
+            <Mail className="mt-0.5 h-5 w-5 shrink-0 text-clay-700" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-ink-900">Prefer email?</p>
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-clay-700 hover:underline">
+                {CONTACT_EMAIL}
+              </a>
+            </div>
+          </Card>
+          <Card className="flex gap-3 rounded-2xl p-5">
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-moss-700" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-ink-900">Reply time</p>
+              <p className="text-sm text-ink-600">We usually reply within 2 business days.</p>
+            </div>
+          </Card>
+          <Card className="flex gap-3 rounded-2xl p-5">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-moss-700" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-ink-900">Stay safe</p>
+              <p className="text-sm text-ink-600">
+                We never ask for your password or payment details. Read our{" "}
+                <Link href="/safety" className="font-medium text-clay-700 hover:underline">
+                  safety tips
+                </Link>
+                .
+              </p>
+            </div>
+          </Card>
+          <p className="px-1 text-sm text-ink-500">
+            New here? <Link href="/how-it-works" className="font-medium text-clay-700 hover:underline">How It Works</Link>{" "}
+            and the <Link href="/faq" className="font-medium text-clay-700 hover:underline">FAQ</Link> answer most questions.
+          </p>
+        </aside>
+      </div>
+    </div>
   );
 }

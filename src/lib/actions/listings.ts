@@ -2,27 +2,26 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { apiFetch, getCurrentUser } from "@/lib/api-client";
+import { z } from "zod";
+import { CONDITION_OPTIONS } from "@/lib/types";
 import { listingSchema } from "@/lib/validations";
 import { zodFieldErrors, type ActionState } from "./types";
 
-const NOT_CONFIGURED_MESSAGE =
-  "Supabase isn't connected yet, so listings can't be saved. Add your project credentials to .env.local first.";
+interface CreatedListing {
+  id: string;
+}
+
+interface Category {
+  id: string;
+  slug: string;
+}
 
 export async function createListingAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  if (!isSupabaseConfigured()) {
-    return { status: "error", message: NOT_CONFIGURED_MESSAGE };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?redirectTo=${encodeURIComponent("/sell")}`);
   }
@@ -44,60 +43,62 @@ export async function createListingAction(
     return { status: "error", fieldErrors: zodFieldErrors(parsed.error) };
   }
 
-  const { data: category } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("slug", parsed.data.category)
-    .maybeSingle();
-
-  const { data: listing, error } = await supabase
-    .from("listings")
-    .insert({
-      seller_id: user.id,
-      category_id: category?.id ?? null,
-      brand_name: parsed.data.brand,
-      product_name: parsed.data.product,
-      model_label: parsed.data.model || null,
-      part_name: parsed.data.part,
-      condition: parsed.data.condition,
-      price: parsed.data.price,
-      description: parsed.data.description,
-      location: parsed.data.location || null,
-    })
-    .select("id")
-    .single();
-
-  if (error || !listing) {
-    return {
-      status: "error",
-      message: "We couldn't publish your listing just now. Please try again.",
-    };
+  // The structured catalog (categories/brands/products) starts nearly
+  // empty - most listings are free text only (brandName/productName/etc on
+  // the Listing itself). We still look up categoryId when the slug happens
+  // to match a real category.
+  let categoryId: string | undefined;
+  try {
+    const categories = await apiFetch<Category[]>("/catalog/categories", { authenticated: false });
+    categoryId = categories.find((c) => c.slug === parsed.data.category)?.id;
+  } catch {
+    categoryId = undefined;
   }
 
-  // Photos are optional. Upload whatever real files were attached (browsers
-  // include an empty File with size 0 when no file was chosen for an input,
-  // so we filter those out).
+  // Photos are optional, and piqnex-backend's upload endpoint isn't wired up
+  // to real storage yet (see UploadsService - it's an intentional stub
+  // until S3/R2 credentials are added). We still try, but a failure here
+  // never blocks publishing the listing itself - a part with fewer
+  // photos is still published.
   const files = formData
     .getAll("images")
     .filter((f): f is File => f instanceof File && f.size > 0)
     .slice(0, 6);
-
-  for (const [index, file] of files.entries()) {
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const path = `${user.id}/${listing.id}/${index}-${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from("listing-images")
-      .upload(path, file, { contentType: file.type || undefined });
-
-    if (!uploadError) {
-      await supabase.from("listing_images").insert({
-        listing_id: listing.id,
-        storage_path: path,
-        sort_order: index,
+  const imagePaths: string[] = [];
+  for (const file of files) {
+    try {
+      const uploaded = await apiFetch<{ storagePath: string }>("/uploads/listing-image", {
+        method: "POST",
+        body: { filename: file.name, contentType: file.type },
       });
+      if (uploaded?.storagePath) imagePaths.push(uploaded.storagePath);
+    } catch {
+      // Upload storage isn't configured yet - skip this photo, don't fail the listing.
     }
-    // If a single photo fails to upload, we deliberately don't fail the whole
-    // listing - the part is still published, just with fewer photos.
+  }
+
+  let listing: CreatedListing;
+  try {
+    listing = await apiFetch<CreatedListing>("/listings", {
+      method: "POST",
+      body: {
+        categoryId,
+        brandName: parsed.data.brand,
+        productName: parsed.data.product,
+        modelLabel: parsed.data.model || undefined,
+        partName: parsed.data.part,
+        condition: parsed.data.condition,
+        price: parsed.data.price,
+        description: parsed.data.description,
+        location: parsed.data.location || undefined,
+        imagePaths: imagePaths.length ? imagePaths : undefined,
+      },
+    });
+  } catch {
+    return {
+      status: "error",
+      message: "We couldn't publish your listing just now. Please try again.",
+    };
   }
 
   revalidatePath("/browse");
@@ -106,30 +107,96 @@ export async function createListingAction(
 }
 
 export async function updateListingStatusAction(listingId: string, status: "active" | "sold" | "removed") {
-  if (!isSupabaseConfigured()) return;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  await supabase.from("listings").update({ status }).eq("id", listingId).eq("seller_id", user.id);
+  try {
+    await apiFetch(`/listings/${listingId}/status`, { method: "PATCH", body: { status } });
+  } catch {
+    // Ownership/not-found errors from the backend are deliberately silent here.
+  }
+
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
   revalidatePath(`/parts/${listingId}`);
   revalidatePath("/browse");
+  revalidatePath("/");
 }
 
 export async function deleteListingAction(listingId: string) {
-  if (!isSupabaseConfigured()) return;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  // RLS also enforces this, but checking seller_id here gives a clearer
-  // failure mode than a silently-ignored delete.
-  await supabase.from("listings").delete().eq("id", listingId).eq("seller_id", user.id);
+  try {
+    await apiFetch(`/listings/${listingId}`, { method: "DELETE" });
+  } catch {
+    // Same fire-and-forget behavior as updateListingStatusAction above.
+  }
+
   revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
   revalidatePath("/browse");
+  revalidatePath("/");
+}
+
+const editSchema = z.object({
+  brand: z.string().trim().min(1, "Brand is required").max(120),
+  product: z.string().trim().min(1, "Product is required").max(120),
+  model: z.string().trim().max(120).optional().or(z.literal("")),
+  part: z.string().trim().min(1, "Part is required").max(120),
+  condition: z.enum(CONDITION_OPTIONS as unknown as [string, ...string[]], { message: "Choose a condition" }),
+  price: z.coerce.number({ message: "Enter a price" }).min(0, "Price can't be negative"),
+  description: z.string().trim().min(10, "Add a few words describing the part's condition and history").max(2000),
+  location: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
+export async function updateListingAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const id = String(formData.get("listingId") ?? "");
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?redirectTo=${encodeURIComponent(`/parts/${id}/edit`)}`);
+
+  const parsed = editSchema.safeParse({
+    brand: formData.get("brand"),
+    product: formData.get("product"),
+    model: formData.get("model") ?? "",
+    part: formData.get("part"),
+    condition: formData.get("condition"),
+    price: formData.get("price"),
+    description: formData.get("description"),
+    location: formData.get("location") ?? "",
+  });
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: zodFieldErrors(parsed.error) };
+  }
+
+  try {
+    await apiFetch(`/listings/${id}`, {
+      method: "PATCH",
+      body: {
+        brandName: parsed.data.brand,
+        productName: parsed.data.product,
+        modelLabel: parsed.data.model || "",
+        partName: parsed.data.part,
+        condition: parsed.data.condition,
+        price: parsed.data.price,
+        description: parsed.data.description,
+        location: parsed.data.location || "",
+      },
+    });
+  } catch {
+    return { status: "error", message: "We couldn't save your changes. Please try again." };
+  }
+
+  revalidatePath(`/parts/${id}`);
+  revalidatePath("/browse");
+  revalidatePath("/profile");
+  revalidatePath("/my-listings");
+  revalidatePath("/my-requests");
+  revalidatePath("/");
+  redirect(`/parts/${id}?updated=1`);
 }

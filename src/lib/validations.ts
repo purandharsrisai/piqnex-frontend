@@ -46,35 +46,54 @@ export type ContactRequestInput = z.infer<typeof contactRequestSchema>;
 
 export const authSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 export type AuthInput = z.infer<typeof authSchema>;
 
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const signupSchema = z
+  .object({
+    displayName: z.string().trim().min(1, "Display name is required").max(80),
+    email: z.string().trim().email("Enter a valid email address"),
+    // 10 digits, no country code - the form only lets digits through.
+    phone: z
+      .string()
+      .trim()
+      .min(1, "Phone number is required")
+      .regex(/^[0-9]{10}$/, "Enter a 10-digit phone number"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Re-enter your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+export type SignupInput = z.infer<typeof signupSchema>;
 
-export const categorySchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, "Slug is required")
-    .max(80)
-    .regex(slugPattern, "Use lowercase letters, numbers, and hyphens only"),
-  name: z.string().trim().min(1, "Name is required").max(120),
-  icon: z.string().trim().max(80).optional().or(z.literal("")),
-  sort_order: z.coerce.number().int().min(0).max(1000).optional(),
-});
-export type CategoryInput = z.infer<typeof categorySchema>;
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
-export const brandSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, "Slug is required")
-    .max(80)
-    .regex(slugPattern, "Use lowercase letters, numbers, and hyphens only"),
-  name: z.string().trim().min(1, "Name is required").max(120),
-  category_id: z.string().uuid("Choose a category"),
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address"),
 });
-export type BrandInput = z.infer<typeof brandSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Missing reset token"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

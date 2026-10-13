@@ -11,7 +11,8 @@ import {
   Puzzle,
   type LucideIcon,
 } from "lucide-react";
-import { SAMPLE_CATEGORIES } from "@/lib/sample-data";
+import { CATEGORIES } from "@/lib/categories";
+import { Reveal } from "@/components/ui/Reveal";
 
 const ICONS: Record<string, LucideIcon> = {
   Headphones,
@@ -27,29 +28,34 @@ const ICONS: Record<string, LucideIcon> = {
 
 export function CategoryGrid() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="font-display text-2xl text-ink-900">Browse by category</h2>
-        <p className="hidden text-sm text-ink-500 sm:block">
-          Starting with electronics - more are coming.
-        </p>
-      </div>
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+      <Reveal>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wider text-clay-600">Categories</p>
+            <h2 className="mt-2 font-display text-3xl text-ink-900 sm:text-4xl">Shop by category</h2>
+          </div>
+          <p className="hidden max-w-xs text-right text-ink-500 sm:block">
+            Starting with electronics, and more categories are coming.
+          </p>
+        </div>
+      </Reveal>
 
-      {/* A wrapping row of tags rather than a grid of identical icon
-          cards - reads as a set of filters you'd flip through, not a
-          feature-grid section. */}
-      <div className="mt-5 flex flex-wrap gap-2.5">
-        {SAMPLE_CATEGORIES.map((category) => {
+      <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-9">
+        {CATEGORIES.map((category, i) => {
           const Icon = ICONS[category.icon] ?? Puzzle;
           return (
-            <Link
-              key={category.slug}
-              href={`/browse?category=${category.slug}`}
-              className="group flex items-center gap-2 rounded-full border border-ink-200 bg-white py-2 pl-3 pr-4 text-sm text-ink-700 transition-colors hover:border-clay-300 hover:bg-clay-50 hover:text-clay-800"
-            >
-              <Icon className="h-4 w-4 text-ink-400 group-hover:text-clay-600" aria-hidden="true" />
-              {category.name}
-            </Link>
+            <Reveal key={category.slug} delay={Math.min(i * 0.04, 0.3)} y={14}>
+              <Link
+                href={`/browse?category=${category.slug}`}
+                className="group flex h-full flex-col items-center gap-3 rounded-2xl border border-ink-100 bg-white px-2 py-5 text-center shadow-card transition-all duration-200 hover:-translate-y-1 hover:border-clay-200 hover:shadow-card-hover"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-50 text-ink-700 transition-colors duration-200 group-hover:bg-clay-600 group-hover:text-white">
+                  <Icon className="h-6 w-6" aria-hidden="true" />
+                </span>
+                <span className="text-sm font-semibold text-ink-800">{category.name}</span>
+              </Link>
+            </Reveal>
           );
         })}
       </div>

@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Demo-mode photos are generated SVGs served from /api/demo-photo.
+    unoptimized: process.env.NEXT_PUBLIC_DEMO === "true",
     remotePatterns: [
       {
         protocol: "https",
