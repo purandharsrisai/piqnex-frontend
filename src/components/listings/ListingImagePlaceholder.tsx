@@ -15,10 +15,9 @@ function tintFor(seed: string) {
 }
 
 /**
- * Used whenever a listing has no photo yet - which, for sample/demo data,
- * is always (we deliberately don't hotlink stock photos: they're a
- * dependency that can break, and generic stock photography is its own
- * "template" tell). A plain initial-letter monogram, tinted consistently
+ * Used whenever a listing has no photo yet. We deliberately don't hotlink
+ * stock photos: they're a dependency that can break, and generic stock
+ * photography is its own "template" tell. A plain initial-letter monogram, tinted consistently
  * per listing, reads as an intentional placeholder rather than a broken
  * image or an empty gray box.
  */

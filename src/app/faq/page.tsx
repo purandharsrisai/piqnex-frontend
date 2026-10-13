@@ -55,10 +55,6 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
         q: "Nobody has my part listed. What now?",
         a: "Save a need request. Sellers who list a matching part later will see there is demand for it.",
       },
-      {
-        q: "What are \"Sample\" listings?",
-        a: "While the marketplace is new, some listings are demo data so the site doesn't look empty. They're clearly tagged Sample and have no real seller to contact.",
-      },
     ],
   },
   {
